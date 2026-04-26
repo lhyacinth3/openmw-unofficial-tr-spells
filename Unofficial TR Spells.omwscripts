@@ -1,0 +1,6 @@
+LOAD: scripts/tr_spells/trContent.lua
+GLOBAL: scripts/tr_spells/trGlobal.lua
+PLAYER: scripts/tr_spells/trPlayer.lua
+CUSTOM: scripts/tr_spells/trActor.lua
+CUSTOM: scripts/tr_spells/trSummon.lua
+CUSTOM: scripts/tr_spells/trDistract.lua
