@@ -53,9 +53,9 @@ G = {
 	sluggishIterator = nil,
 	
 	-- Helpers (assigned below)
-	scheduleJob             = nil -- function to schedule an job (G.scheduleJob(fn, delaySec))
+	scheduleJob             = nil, -- function to schedule an job (G.scheduleJob(fn, delaySec))
 	overrideSpell           = nil,
-	registerPreviewAction  = nil
+	registerPreviewAction  = nil,
 }
 
 local G = G
