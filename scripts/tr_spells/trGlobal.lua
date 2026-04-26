@@ -24,6 +24,40 @@ local SUMMON_AI_SCRIPT    = 'scripts/tr_spells/trSummon.lua'
 local nextSummonCheck = 0
 local SUMMON_CHECK_INTERVAL = 0.5
 
+-- =====================================================
+-- Insight
+-- =====================================================
+
+local function resolveLeveledList(id, depth)
+	depth = depth or 0
+	if depth > 10 then return nil end
+	local entries = leveledLists[id]
+	if not entries then return id end  
+	local pick = entries[math.random(1, #entries)]
+	return resolveLeveledList(pick, depth + 1)
+end
+
+local function applyInsightLoot(player, cont)
+	if saveData.inspectedContainers[cont.id] then return end
+	saveData.inspectedContainers[cont.id] = true
+	local lists = containerLeveledLists[cont.recordId]
+	if not lists then return end
+	local mag = types.Actor.activeEffects(player):getEffect("t_mysticism_insight").magnitude
+	local success = true
+	while success do
+		if math.random() < mag/100 then
+			local listId = lists[math.random(1, #lists)]
+			local itemId = resolveLeveledList(listId)
+			if itemId then
+				world.createObject(itemId, 1):moveInto(cont.type.inventory(cont))
+			end
+			mag = mag * 0.8
+		else
+			success = false
+		end
+	end
+end
+
 -- ===============================
 -- Banishing
 -- ===============================
@@ -621,40 +655,6 @@ local function giveStartingTomes(data)
 		if not inv:find(def.tomeId) then
 			local tome = world.createObject(def.tomeId, 1)
 			tome:moveInto(inv)
-		end
-	end
-end
-
--- =====================================================
--- Insight
--- =====================================================
-
-local function resolveLeveledList(id, depth)
-	depth = depth or 0
-	if depth > 10 then return nil end
-	local entries = leveledLists[id]
-	if not entries then return id end  
-	local pick = entries[math.random(1, #entries)]
-	return resolveLeveledList(pick, depth + 1)
-end
-
-local function applyInsightLoot(player, cont)
-	if saveData.inspectedContainers[cont.id] then return end
-	saveData.inspectedContainers[cont.id] = true
-	local lists = containerLeveledLists[cont.recordId]
-	if not lists then return end
-	local mag = types.Actor.activeEffects(player):getEffect("t_mysticism_insight").magnitude
-	local success = true
-	while success do
-		if math.random() < mag/100 then
-			local listId = lists[math.random(1, #lists)]
-			local itemId = resolveLeveledList(listId)
-			if itemId then
-				world.createObject(itemId, 1):moveInto(cont.type.inventory(cont))
-			end
-			mag = mag * 0.8
-		else
-			success = false
 		end
 	end
 end
