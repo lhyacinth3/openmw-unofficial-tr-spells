@@ -33,7 +33,7 @@ local function defineSelfSpell(id, effectId, name, cost, duration, magnitude)
 		name = name,
 		type = content.spells.TYPE.Spell,
 		cost = cost,
-		isAutocalc = false,	
+		isAutocalc = false,
 		effects = {
 			{
 				id = effectId,
@@ -98,11 +98,116 @@ defineEffect("t_bound_hammerresdayn", "Bound Hammer (Resdayn)", "boundmace",    
 defineEffect("t_bound_razorresdayn",  "Bound Razor (Resdayn)",  "boundlongsword", 2, "td/s/td_s_bnd_red_razor.dds")
 
 -- =====================================================
--- MISC EFFECTS
+-- VANILLA BOUND REPLACERS
+-- =====================================================
+
+local function defineVanillaScaledBound(id, name, vanillaId)
+	local v = content.magicEffects.records[vanillaId]
+	if not v then return end
+	content.magicEffects.records[id] = {
+		template = v,
+		name     = name,
+		icon     = v.icon,
+		baseCost = v.baseCost,
+	}
+end
+
+defineVanillaScaledBound("t_bound_battleaxe", "Bound Battle Axe", "boundbattleaxe")
+defineVanillaScaledBound("t_bound_boots",     "Bound Boots",      "boundboots")
+defineVanillaScaledBound("t_bound_cuirass",   "Bound Cuirass",    "boundcuirass")
+defineVanillaScaledBound("t_bound_dagger",    "Bound Dagger",     "bounddagger")
+defineVanillaScaledBound("t_bound_gloves",    "Bound Gloves",     "boundgloves")
+defineVanillaScaledBound("t_bound_helm",      "Bound Helm",       "boundhelm")
+defineVanillaScaledBound("t_bound_longbow",   "Bound Longbow",    "boundlongbow")
+defineVanillaScaledBound("t_bound_longsword", "Bound Longsword",  "boundlongsword")
+defineVanillaScaledBound("t_bound_mace",      "Bound Mace",       "boundmace")
+defineVanillaScaledBound("t_bound_shield",    "Bound Shield",     "boundshield")
+defineVanillaScaledBound("t_bound_spear",     "Bound Spear",      "boundspear")
+
+
+if BOUND_VANILLA_PATCH then
+	-- vanilla effect id -> scaled effect id
+	local vanillaToScaled = {
+		boundbattleaxe = "t_bound_battleaxe",
+		boundboots     = "t_bound_boots",
+		boundcuirass   = "t_bound_cuirass",
+		bounddagger    = "t_bound_dagger",
+		boundgloves    = "t_bound_gloves",
+		boundhelm      = "t_bound_helm",
+		boundlongbow   = "t_bound_longbow",
+		boundlongsword = "t_bound_longsword",
+		boundmace      = "t_bound_mace",
+		boundshield    = "t_bound_shield",
+		boundspear     = "t_bound_spear",
+	}
+
+	local function patchEffects(effects)
+		if not effects then return nil end
+		local changed = false
+		local out = {}
+		local i = 1
+		while true do
+			local e = effects[i]
+			if e == nil then break end
+			local mapped = e.id and vanillaToScaled[e.id:lower()]
+			if mapped then changed = true end
+			out[i] = {
+				id                = mapped or e.id,
+				range             = e.range,
+				area              = e.area,
+				duration          = e.duration,
+				magnitudeMin      = e.magnitudeMin,
+				magnitudeMax      = e.magnitudeMax,
+				affectedAttribute = e.affectedAttribute,
+				affectedSkill     = e.affectedSkill,
+			}
+			i = i + 1
+		end
+		if changed then return out end
+		return nil
+	end
+	
+	-- spells
+	for id, rec in pairs(content.spells.records) do
+		local patched = patchEffects(rec.effects)
+		if patched then
+			content.spells.records[id].effects = patched
+		end
+	end
+
+	-- enchantments
+	for id, rec in pairs(content.enchantments.records) do
+		local patched = patchEffects(rec.effects)
+		if patched then
+			content.enchantments.records[id].effects = patched
+		end
+	end
+
+	-- potions
+	for id, rec in pairs(content.potions.records) do
+		local patched = patchEffects(rec.effects)
+		if patched then
+			content.potions.records[id].effects  = patched
+		end
+	end
+
+	-- ingredients
+	for id, rec in pairs(content.ingredients.records) do
+		local patched = patchEffects(rec.effects)
+		if patched then
+			content.ingredients.records[id].effects = patched
+		end
+	end
+end
+
+-- =====================================================
+-- OTHER EFFECTS
 -- =====================================================
 
 defineEffect("t_intervention_kyne", "Kyne's Intervention", "divineintervention", 150, "td/s/td_s_int_kyne.tga", {hasDuration = false, hasMagnitude = false})
+
 content.statics.records["TRSU_emptyStatic"] = {model = "meshes/tr_spells/none.nif"}
+
 defineEffect("t_mysticism_blink", "Blink", "telekinesis", EFFECT_COST_BLINK, "td/s/td_s_blink.tga", { onTouch = true, onTarget = true, hasDuration = false, hasMagnitude = true, school = "mysticism",
     --castStatic= "TRSU_emptyStatic",--"meshes/tr_spells/none.nif",--content.statics.records["VFX_MysticismCast"].model,
     bolt= "VFX_MysticismBolt",
@@ -155,6 +260,7 @@ defineSelfSpell("t_com_cnj_summonskeletonchamp",   "t_summon_skeletonchampion", 
 defineSelfSpell("t_com_cnj_summonfrostmonarch",    "t_summon_atrofrostmon",     "Summon Frost Monarch",        141, 60)
 defineSelfSpell("t_com_cnj_summonspiderdaedra",    "t_summon_spiderdaedra",     "Summon Spider Daedra",        126, 60)
 
+-- NPC only
 defineSelfSpell("t_cr_cnj_aylsorcksummon1", "t_summon_auroran",       nil, 40, 40)
 defineSelfSpell("t_cr_cnj_aylsorcksummon3", "t_summon_welkyndspirit", nil, 25, 40)
 
@@ -168,17 +274,18 @@ defineSelfSpell("t_com_cnj_boundwarhammer",  "t_bound_warhammer",  "Bound Warham
 defineSelfSpell("t_com_cnj_boundpauldron",   "t_bound_pauldrons",  "Bound Pauldrons",  6, 60)
 defineSelfSpell("t_com_cnj_boundgreatsword", "t_bound_greatsword", "Bound Greatsword", 6, 60)
 
+-- NPC only
 defineSelfSpell("t_de_cnj_uni_boundhammerresdayn", "t_bound_hammerresdayn", nil, 6, 60)
 defineSelfSpell("t_de_cnj_uni_boundrazororesdayn", "t_bound_razorresdayn",  nil, 6, 60)
 
 -- =====================================================
--- MISC SPELLS
+-- OTHER SPELLS
 -- =====================================================
 
 defineSelfSpell("t_nor_mys_kynesintervention", "t_intervention_kyne", "Kyne's Intervention",  8, 0)
-defineSelfSpell("t_com_mys_blink", "t_mysticism_blink", "Blink", math.floor(EFFECT_COST_BLINK * 2.5), 0, 50) 
-defineSelfSpell("t_com_mys_uni_passwall", "t_mysticism_passwall", "Passwall", math.floor(EFFECT_COST_PASSWALL * 0.128), 1, 25) 
-defineSelfSpell("t_com_mys_insight", "t_mysticism_insight", "Insight", math.floor(EFFECT_COST_INSIGHT*7.6), 10, 15)  
+defineSelfSpell("t_com_mys_blink", "t_mysticism_blink", "Blink", math.floor(EFFECT_COST_BLINK * 2.5), 0, 50) -- 10 * 2.5 = 25
+defineSelfSpell("t_com_mys_uni_passwall", "t_mysticism_passwall", "Passwall", math.floor(EFFECT_COST_PASSWALL * 0.128), 1, 25) -- 750 * 0.128 = 96
+defineSelfSpell("t_com_mys_insight", "t_mysticism_insight", "Insight", math.floor(EFFECT_COST_INSIGHT*7.6), 10, 15)  -- 10 * 7.6 = 76
 defineSpell("t_uni_sainttelynblessing", {
 	type = content.spells.TYPE.Ability,
 	effects = {
@@ -192,7 +299,8 @@ defineSpell("t_uni_sainttelynblessing", {
 	},
 })
 
-defineSelfSpell("t_ayl_alt_radiantshield", "t_alteration_radshield", "Radiant Shield", EFFECT_COST_RADIANT_SHIELD * 15, 30, 10) 
+-- Radiant shield and variants
+defineSelfSpell("t_ayl_alt_radiantshield", "t_alteration_radshield", "Radiant Shield", EFFECT_COST_RADIANT_SHIELD * 15, 30, 10) -- 5 * 15 = 75
 
 defineSpell("t_cr_alt_auroranshield", {
 	type = content.spells.TYPE.Ability,
@@ -207,6 +315,7 @@ defineSpell("t_cr_alt_auroranshield", {
 	},
 })
 
+-- Ayleid radiant shield + light combo
 defineSpell("t_cr_alt_aylsorcklightshield", {
 	name = "Radiant Shield",
 	type = content.spells.TYPE.Spell,
@@ -229,6 +338,7 @@ defineSpell("t_cr_alt_aylsorcklightshield", {
 	},
 })
 
+-- Blind for radiant shield
 local blindEffects = {}
 for i = 0, 6 do
 	local mag = 2 ^ i
@@ -248,10 +358,11 @@ defineSpell("t_alteration_radshield_blind", {
 	effects = blindEffects,
 })
 
+-- Reflect Damage
 defineSpell("t_com_mys_reflectdamage", {
 	name = "Reflect Damage",
 	type = content.spells.TYPE.Spell,
-	cost = math.floor(EFFECT_COST_REFLECT * 3.8), 
+	cost = math.floor(EFFECT_COST_REFLECT * 3.8), -- 20 * 3.8 = 76
 	effects = {
 		{
 			id = "t_mysticism_reflectdmg",
@@ -263,10 +374,11 @@ defineSpell("t_com_mys_reflectdamage", {
 	},
 })
 
+-- Banish Daedra
 defineSpell("t_com_mys_banishdaedra", {
 	name = "Banish Daedra",
 	type = content.spells.TYPE.Spell,
-	cost = math.floor(EFFECT_COST_BANISH_DAE * 0.5), 
+	cost = math.floor(EFFECT_COST_BANISH_DAE * 0.5), --128 * 0.5 = 64
 	effects = {
 		{
 			id = "t_mysticism_banishdae",
@@ -278,10 +390,11 @@ defineSpell("t_com_mys_banishdaedra", {
 	},
 })
 
+-- Resartus
 defineSpell("t_com_res_armorresartus", {
 	name = "Armor Resartus",
 	type = content.spells.TYPE.Spell,
-	cost = math.floor(EFFECT_COST_ARMOR_RESARTUS*1.5), 
+	cost = math.floor(EFFECT_COST_ARMOR_RESARTUS*1.5), -- 60 * 1.5 = 90
 	effects = {
 		{
 			id = "t_restoration_armorresartus",
@@ -296,7 +409,7 @@ defineSpell("t_com_res_armorresartus", {
 defineSpell("t_com_res_weaponresartus", {
 	name = "Weapon Resartus",
 	type = content.spells.TYPE.Spell,
-	cost = math.floor(EFFECT_COST_WEAPON_RESARTUS * 0.75), 
+	cost = math.floor(EFFECT_COST_WEAPON_RESARTUS * 0.75), -- 120 * 0.75 = 90
 	effects = {
 		{
 			id = "t_restoration_weaponresartus",
@@ -308,10 +421,11 @@ defineSpell("t_com_res_weaponresartus", {
 	},
 })
 
+-- Distract
 defineSpell("t_com_ilu_distractcreature", {
 	name = "Distract Creature",
 	type = content.spells.TYPE.Spell,
-	cost = math.floor(EFFECT_COST_DISTRACT_CREATURE * 22), 
+	cost = math.floor(EFFECT_COST_DISTRACT_CREATURE * 22), -- 0.5 * 22 = 11
 	effects = {
 		{
 			id = "t_illusion_distractcreature",
@@ -326,7 +440,7 @@ defineSpell("t_com_ilu_distractcreature", {
 defineSpell("t_com_ilu_distracthumanoid", {
 	name = "Distract Humanoid",
 	type = content.spells.TYPE.Spell,
-	cost = EFFECT_COST_DISTRACT_HUMANOID * 22, 
+	cost = EFFECT_COST_DISTRACT_HUMANOID * 22, -- 1 * 22 = 22
 	effects = {
 		{
 			id = "t_illusion_distracthumanoid",
@@ -339,40 +453,67 @@ defineSpell("t_com_ilu_distracthumanoid", {
 })
 
 -- =====================================================
+-- ENCHANTMENT PATCHES
+-- =====================================================
+
+-- aliases
+local CastOnce       = content.enchantments.TYPE.CastOnce
+local ConstantEffect = content.enchantments.TYPE.ConstantEffect
+local CastOnUse      = content.enchantments.TYPE.CastOnUse
+local Self           = content.RANGE.Self
+local Touch          = content.RANGE.Touch
+local Target         = content.RANGE.Target
+
+-- helper
+local function eff(id, range, area, duration, magMin, magMax, attribute, skill)
+	return {
+		id = id:lower(),
+		range = range,
+		area = area,
+		duration = duration,
+		magnitudeMin = magMin,
+		magnitudeMax = magMax,
+		affectedAttribute = attribute,
+		affectedSkill = skill,
+	}
+end
+
+-- Vanilla bound -> scaled bound
+local boundRemap = {
+	boundbattleaxe = "t_bound_battleaxe",
+	boundboots     = "t_bound_boots",
+	boundcuirass   = "t_bound_cuirass",
+	bounddagger    = "t_bound_dagger",
+	boundgloves    = "t_bound_gloves",
+	boundhelm      = "t_bound_helm",
+	boundlongbow   = "t_bound_longbow",
+	boundlongsword = "t_bound_longsword",
+	boundmace      = "t_bound_mace",
+	boundshield    = "t_bound_shield",
+	boundspear     = "t_bound_spear",
+}
+
+-- =====================================================
 -- ENCHANTMENTS
 -- =====================================================
 
 -- veloth's r pauldron: constant reflect damage 30pt on self
 content.enchantments.records["t_const_velothspauld_r"] = {
-	type = content.enchantments.TYPE.ConstantEffect,
+	type = ConstantEffect,
 	charge = 0,
 	cost = 0,
 	effects = {
-		{
-			id = "t_mysticism_reflectdmg",
-			range = content.RANGE.Self,
-			area = 0,
-			duration = 1,
-			magnitudeMin = 30,
-			magnitudeMax = 30,
-		},
+		eff("t_mysticism_reflectdmg", Self, 0, 1, 30, 30),
 	},
 }
 
 -- right bracer of bifurcation, item id: t_imp_uni_bracerr_bifurication
 content.enchantments.records["t_const_spell_bifurcation"] = {
-	type = content.enchantments.TYPE.ConstantEffect,
+	type = ConstantEffect,
 	charge = 0,
 	cost = 0,
 	effects = {
-		{
-			id = "t_restoration_fortifycasting",
-			range = content.RANGE.Self,
-			area = 0,
-			duration = 1,
-			magnitudeMin = 20,
-			magnitudeMax = 20,
-		},
+		eff("t_restoration_fortifycasting", Self, 0, 1, 20, 20),
 	},
 }
 
@@ -380,13 +521,13 @@ content.enchantments.records["t_const_spell_bifurcation"] = {
 --[[ 
 -- ring of namira: reflect damage 30pts, this is just 1 of 2 effects
 content.enchantments.records["t_const_ring_namira"] = {
-	type = content.enchantments.TYPE.ConstantEffect,
+	type = ConstantEffect,
 	charge = 0,
 	cost = 0,
 	effects = {
 		{
 			id = "t_mysticism_reflectdmg",
-			range = content.RANGE.Self,
+			range = Self,
 			area = 0,
 			duration = 1,
 			magnitudeMin = 30,
@@ -427,6 +568,7 @@ content.enchantments.records["tr_m1_sanguinesrose_en"] = {
 	},
 }
 ]]
+
 -- =====================================================
 -- SPELL TOMES
 -- =====================================================
@@ -492,7 +634,7 @@ defineTome("spelltome_tr_alt",         "Spell Tome: Alteration",  "alt")
 defineTome("spelltome_tr_ilu",         "Spell Tome: Illusion",    "ilu")
 
 -- =====================================================
--- TESTING SPELLS
+-- TESTING
 -- =====================================================
 
 defineSpell("t_test_boundarmor", {
@@ -500,12 +642,12 @@ defineSpell("t_test_boundarmor", {
 	type = content.spells.TYPE.Spell,
 	cost = 0,
 	effects = {
-		{ id = "boundboots",      range = content.RANGE.Self, duration = 60, magnitudeMin = 1, magnitudeMax = 1 },
-		{ id = "boundcuirass",    range = content.RANGE.Self, duration = 60, magnitudeMin = 1, magnitudeMax = 1 },
-		{ id = "boundgloves",     range = content.RANGE.Self, duration = 60, magnitudeMin = 1, magnitudeMax = 1 },
-		{ id = "boundhelm",       range = content.RANGE.Self, duration = 60, magnitudeMin = 1, magnitudeMax = 1 },
-		{ id = "boundshield",     range = content.RANGE.Self, duration = 60, magnitudeMin = 1, magnitudeMax = 1 },
-		{ id = "t_bound_greaves", range = content.RANGE.Self, duration = 60, magnitudeMin = 1, magnitudeMax = 1 },
+		{ id = BOUND_VANILLA_PATCH and "t_bound_boots" or "boundboots",     range = content.RANGE.Self, duration = 60, magnitudeMin = 1, magnitudeMax = 1 },
+		{ id = BOUND_VANILLA_PATCH and "t_bound_cuirass" or "boundcuirass", range = content.RANGE.Self, duration = 60, magnitudeMin = 1, magnitudeMax = 1 },
+		{ id = BOUND_VANILLA_PATCH and "t_bound_gloves" or "boundgloves",   range = content.RANGE.Self, duration = 60, magnitudeMin = 1, magnitudeMax = 1 },
+		{ id = BOUND_VANILLA_PATCH and "t_bound_helm" or "boundhelm",       range = content.RANGE.Self, duration = 60, magnitudeMin = 1, magnitudeMax = 1 },
+		{ id = BOUND_VANILLA_PATCH and "t_bound_shield" or "boundshield",   range = content.RANGE.Self, duration = 60, magnitudeMin = 1, magnitudeMax = 1 },
+		{ id = "t_bound_greaves",   range = content.RANGE.Self, duration = 60, magnitudeMin = 1, magnitudeMax = 1 },
 		{ id = "t_bound_pauldrons", range = content.RANGE.Self, duration = 60, magnitudeMin = 1, magnitudeMax = 1 },
 	},
 })
