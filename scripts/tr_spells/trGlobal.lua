@@ -131,11 +131,11 @@ local function TD_BanishDelete(data)
 			actor.position.y,
 			bbox.center.z + bbox.halfSize.z * scale
 		)
-
+		
 		local container = world.createObject("t_glb_banishdae_empty")
 		container:teleport(actor.cell, sigilPos)
 		container:setScale(scale)
-
+		
 		local containerInv = types.Container.content(container)
 		for _, item in ipairs(keepItems) do
 			item:moveInto(containerInv)
@@ -225,7 +225,22 @@ local function checkDeadSummons()
 			saveData.activeSummons[key] = nil
 		elseif types.Actor.isDead(creature) then
 			local summoner = entry.summoner
-			if summoner and summoner:isValid() and entry.activeSpellId then
+
+			-- magic effect will stay active but it's the best we can do
+			local hasMultipleSummons = false
+			if entry.activeSpellId then
+				for otherKey, otherEntry in pairs(saveData.activeSummons) do
+					if otherKey ~= key
+						and otherEntry.activeSpellId == entry.activeSpellId
+						and otherEntry.summoner == summoner
+					then
+						hasMultipleSummons = true
+						break
+					end
+				end
+			end
+			
+			if not hasMultipleSummons and summoner and summoner:isValid() and entry.activeSpellId then
 				types.Actor.activeSpells(summoner):remove(entry.activeSpellId)
 			end
 			local vfxModel = getStaticModel("vfx_summon_end")
