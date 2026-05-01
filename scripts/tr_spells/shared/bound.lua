@@ -49,7 +49,8 @@ for effectId, def in pairs(BOUND) do
 	G.onMgefTick[effectId] = function(key, eff, activeSpell, entry)
 		if not boundItemsStillCarried(entry) then
 			if entry.activeSpellId then
-				table.insert(G.pendingActiveSpellRemovals, entry.activeSpellId)
+				G.pendingActiveSpellRemovals[#G.pendingActiveSpellRemovals + 1]
+					= entry.activeSpellId
 			end
 		end
 	end

@@ -8,7 +8,7 @@ G.onMgefAdded[EFFECT_ID] = function(key, eff, activeSpell, entry)
 	activeEffects:modify(-mag, "sound")
 	entry.magnitude = mag
 	
-	-- flag for removal onSave for safety
+	-- flag: removal onSave for safety
 	entry.revertOnSave = true
 end
 

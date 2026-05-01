@@ -128,7 +128,7 @@ local function executeBlinkPlayer(magnitude)
 		hidePreviewVfx()
 		core.sendGlobalEvent('TD_BlinkPlayer', {
 			destination = dest,
-			rotation = util.transform.rotateZ(camera.getYaw()) * util.transform.rotateX(camera.getPitch()),
+			rotation    = util.transform.rotateZ(camera.getYaw()) * util.transform.rotateX(camera.getPitch()),
 		})
 		return
 	end
@@ -138,7 +138,7 @@ local function executeBlinkPlayer(magnitude)
 		if not dest then return end
 		core.sendGlobalEvent('TD_BlinkPlayer', {
 			destination = dest,
-			rotation = util.transform.rotateZ(camera.getYaw()) * util.transform.rotateX(camera.getPitch()),
+			rotation    = util.transform.rotateZ(camera.getYaw()) * util.transform.rotateX(camera.getPitch()),
 		})
 	end)
 end
@@ -190,6 +190,8 @@ local function executeBlinkActor(magnitude)
 		yaw = yaw,
 	})
 end
+
+local FRONT_OFFSET = 128
 
 ------------------------- REGISTRATION -------------------------
 
@@ -248,7 +250,7 @@ G.onMgefAdded[EFFECT_ID] = function(key, eff, activeSpell)
 		local forward = v3(math.sin(casterYaw), math.cos(casterYaw), 0)
 		core.sendGlobalEvent('TD_BlinkActor', {
 			actor       = self.object,
-			destination = caster.position + forward * 128,
+			destination = caster.position + forward * FRONT_OFFSET,
 			yaw         = casterYaw + math.pi,
 		})
 	end
@@ -322,6 +324,8 @@ if isPlayer then
 					position = previewDest - v3(0, 0, 35),
 					options = {scale = 1}
 				})
+				-- meshes/td/td_vfx_blink_indicator.nif in the poison song update
+                -- meshes/td/td_vfx_blink_ground.nif in the poison song update
 				return true
 			end
 			return false

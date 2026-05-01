@@ -24,3 +24,4 @@ for _, effectId in pairs(trData.SUMMON_EFFECTS) do
 		core.sendGlobalEvent('TD_DespawnSummon', { key = key })
 	end
 end
+
