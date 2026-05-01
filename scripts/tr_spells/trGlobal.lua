@@ -17,7 +17,6 @@ local function getStaticModel(recordId)
 	return nil
 end
 
-local DISTRACT_SCRIPT     = 'scripts/tr_spells/trDistract.lua'
 local ACTOR_SUMMON_SCRIPT = 'scripts/tr_spells/trActor.lua'
 local SUMMON_AI_SCRIPT    = 'scripts/tr_spells/trSummon.lua'
 
@@ -72,7 +71,7 @@ local function checkBanishSigils()
 			or #types.Container.content(container):getAll() == 0
 		then
 			core.sendGlobalEvent("SpawnVfx", {
-				model = "meshes/e/magic_summon.nif",--"meshes/e/soultraphit.nif",
+				model = "meshes/td/td_vfx_banish.nif",--"meshes/e/soultraphit.nif",
 				position = light.position- v3(0,0,30),
 				options = {scale = 0.50}
 			})
@@ -91,10 +90,10 @@ end
 local function TD_BanishDelete(data)
 	local actor = data.actor
 	if not actor or not actor:isValid() then return end
-
+	
 	local inv = types.Actor.inventory(actor)
 	if not inv:isResolved() then inv:resolve() end
-
+	
 	local keepItems = {}
 	local removedItems = 1
 	for _, item in ipairs(inv:getAll()) do
@@ -121,11 +120,11 @@ local function TD_BanishDelete(data)
 	
 	if #keepItems > 0 or bonusChance > 0 then
 		local bbox = actor:getBoundingBox()
-
+		
 		-- scale 2/3 as baseline, 1.0x at lvl 22
 		local level = types.Actor.stats.level(actor).current
 		local scale = math.min(1.0, (2/3) + (level - 1) * 0.015)
-
+		
 		local sigilPos = v3(
 			actor.position.x,
 			actor.position.y,
@@ -225,8 +224,8 @@ local function checkDeadSummons()
 			saveData.activeSummons[key] = nil
 		elseif types.Actor.isDead(creature) then
 			local summoner = entry.summoner
-
-			-- magic effect will stay active but it's the best we can do
+			
+			-- spell effect will stay active but it's the best we can do
 			local hasMultipleSummons = false
 			if entry.activeSpellId then
 				for otherKey, otherEntry in pairs(saveData.activeSummons) do
@@ -285,7 +284,7 @@ end
 local function handleBoundSpawn(data)
 	local actor = data.actor
 	if not actor or not actor:isValid() then return end
-
+	
 	local forActor = {} 
 	for _, slotItem in ipairs(data.slotItems) do
 		local resolvedId = boundRecords.resolve(actor, slotItem.baseRecordId)
@@ -294,7 +293,7 @@ local function handleBoundSpawn(data)
 --		print(item, item.type.record(item).name)
 		forActor[slotItem.slot] = { item = item }
 	end
-
+	
 	actor:sendEvent('TD_BoundEquip', {
 		key   = data.key,
 		items = forActor,
@@ -345,7 +344,7 @@ end
 
 local function blinkTeleportActor(data)
 	if not data.actor or not data.actor:isValid() then return end
-
+	
 	data.actor:teleport(data.actor.cell, data.destination, {
 		rotation = util.transform.rotateZ(data.yaw),
 	})
@@ -365,12 +364,12 @@ end
 
 local function blinkPreviewShow(data)
 	if not data or not data.position or not data.model then return end
-
+	
 	if blinkPreviewActive then
 		world.vfx.remove(BLINK_PREVIEW_VFX_ID)
 		world.vfx.remove(BLINK_PREVIEW_VFX_ID2)
 	end
-
+	
 	world.vfx.spawn(data.model, data.position+data.offset, {
 		vfxId           = BLINK_PREVIEW_VFX_ID,
 		loop            = true,
@@ -675,11 +674,21 @@ local function giveStartingTomes(data)
 end
 
 -- ===============================
+-- Distract
+-- ===============================
+
+TD_DistractTeleportBack = function(data)
+--	print(111)
+	if not (data.actor and data.position) then return end
+--	print(222)
+	data.actor:teleport(data.cell or "", data.position)
+end
+
+-- ===============================
 -- Engine Events
 -- ===============================
 
 local function onActorActive(object)
-	object:addScript(DISTRACT_SCRIPT)
 	object:addScript(ACTOR_SUMMON_SCRIPT)
 	
 	for _, entry in pairs(saveData.activeSummons) do
@@ -743,9 +752,9 @@ local function onLoad(data)
 	saveData.activeSummons = saveData.activeSummons or {}
 	saveData.banishSigils = saveData.banishSigils or {}
 	saveData.boundRecordCache = saveData.boundRecordCache or {}
-
+	
 	boundRecords.init(saveData.boundRecordCache)
-
+	
 	for key, entry in pairs(saveData.activeSummons) do
 		if not entry.creature or not entry.creature:isValid() then
 			saveData.activeSummons[key] = nil
@@ -784,5 +793,6 @@ return {
 		TD_GiveStartingTomes = giveStartingTomes,
 		TD_BanishDelete     = TD_BanishDelete,
 		TD_RemoveScript     = TD_RemoveScript,
+		TD_DistractTeleportBack = TD_DistractTeleportBack,
 	},
 }

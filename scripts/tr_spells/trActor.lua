@@ -33,8 +33,9 @@ G = {
 	-- for removing spells at the end of a frame
 	pendingActiveSpellRemovals = {},
 	
-	eventHandlers = {}, -- returned eventHandlers
-	onHitJobs     = {}, -- I.Combat events
+	eventHandlers  = {}, -- returned eventHandlers
+	onHitJobs      = {}, -- I.Combat events
+	onInactiveJobs = {}, -- Cleanup before the actor becomes inactive
 	
 	-- onUpdate Jobs.. but not *every* frame
 	sluggishJobs     = {},
@@ -50,7 +51,7 @@ local G = G
 -- wrapper for a scheduled onUpdate (sluggish) job
 function G.scheduleJob(fn, delaySec)
 	local runAfter = core.getSimulationTime() + (delaySec or 0)
-	local key = {} 
+	local key = {} --unique random key
 	G.sluggishJobs[key] = function()
 		if core.getSimulationTime() >= runAfter then
 			G.sluggishJobs[key] = nil
@@ -202,7 +203,6 @@ local function onUpdate(dt)
 	if G.sluggishIterator then
 		G.sluggishJobs[G.sluggishIterator]()
 	end
-	
 	local now = core.getSimulationTime()
 	if now < nextUpdate then return end
 	nextUpdate = now + CHECK_INTERVAL
@@ -215,6 +215,7 @@ local function onUpdate(dt)
 end
 
 local function onInactive()
+	for _, fn in pairs(G.onInactiveJobs) do fn() end
 	teardownAll()
 	core.sendGlobalEvent('TD_RemoveScript', {
 		actor = self.object,

@@ -3,16 +3,17 @@ Configure settings for Unofficial TR spells here
 - adjusting magicka cost of spell effects,
 - Blink VFX config
 - Toggle Illegal Daedra
+- Bound items Behavior
 ]]
 
---[[ 
+--[[ Magicka cost of spell effects
 OpenMW has an engine feature where spell effects cost more than in MWSE
 The formulas for the spell effects in this mod are implemented as closely as possible,
 but if you're coming from MWSE and are surprised as the difference in spell costs you can
 change them here
 ]]
 
-GLOBAL_EFFECT_COST_MULT = 1.0
+GLOBAL_EFFECT_COST_MULT = 1
 
 EFFECT_COST_INSIGHT = 10
 EFFECT_COST_ARMOR_RESARTUS = 60
@@ -24,7 +25,7 @@ EFFECT_COST_BLINK = 10
 EFFECT_COST_PASSWALL = 750
 EFFECT_COST_DISTRACT_CREATURE = 0.5
 EFFECT_COST_DISTRACT_HUMANOID = 1
-EFFECT_COST_FORTCAST = 2
+EFFECT_COST_FORTCAST = 12
 
 --[[ Blink VFX
 There are a few presets for Blink VFX to help you not teleport into walls
@@ -81,3 +82,29 @@ You can toggle it on here - false = off, true = on
 ]]
 
 ILLEGAL_DAEDRA_TOGGLE = false
+
+--[[ Bound Items
+This mod has its own implementation of the Tamriel Data Bound armor and weapons
+but can be extended to also apply to vanilla Bound items as well.
+Disabled by default for compatibility with other mods altering vanilla Bound items.
+
+BOUND_VANILLA_PATCH - Vanilla bound item spell effects will be handled by this mod - false = off, true = on
+BOUND_SCALING_ENABLED - Scale Bound items with the below formulas. false = off, true = on
+BOUND_DAMAGE/ARMOR/ENCHANT_BASE - From your Conjuration skill (starting from 0), increased % on the source record's stats
+BOUND_DAMAGE/ARMOR/ENCHANT_PER_LEVEL - Increase damage, armor, and enchantment strength per point of conjuration,
+  additive to the base %. Example: with settings at 40 and 0.7 you get 120% at lvl 100
+BOUND_WEIGHT_BASE/REDUCTION_PER_LEVEL - Change the weight for Bound items here, based on conjuration/enchantment skill.
+  Example: with BOUND_WEIGHT_BASE at 40 and BOUND_WEIGHT_REDUCTION_PER_LEVEL at 0.5, the items become weightless at lvl 80
+  BOUND_SCALING_ENABLED must be set to true.
+]]
+
+BOUND_VANILLA_PATCH = false 
+BOUND_SCALING_ENABLED = false
+BOUND_DAMAGE_BASE = 50 -- %
+BOUND_ARMOR_BASE = 50 -- %
+BOUND_ENCHANT_BASE = 50 -- %
+BOUND_DAMAGE_BONUS_PER_LEVEL  = 0.7  -- %
+BOUND_ARMOR_BONUS_PER_LEVEL   = 0.7  -- %
+BOUND_ENCHANT_BONUS_PER_LEVEL = 0.7  -- %
+BOUND_WEIGHT_BASE = 40 -- %
+BOUND_WEIGHT_REDUCTION_PER_LEVEL = 0.5 -- %

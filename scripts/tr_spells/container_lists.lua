@@ -1,4 +1,3 @@
--- tes3conv my beloved
 local list = {
 	["ab_dae_atronachiron"]={"ab_lvl_lodestone"},
 	["ab_dae_atrostormmonarch"]={"random_void_salts"},

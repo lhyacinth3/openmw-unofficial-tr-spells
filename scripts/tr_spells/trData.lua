@@ -69,50 +69,125 @@ data.SUMMON_EFFECTS = {
 	["t_cr_cnj_aylsorcksummon3"]          = "t_summon_welkyndspirit",
 }
 
--- spell ID -> bound. actual item record is created dynamically
+-- spell ID -> bound
 data.BOUND_ITEMS = {
 	["t_bound_greaves"] = {
 		spellId   = "t_com_cnj_boundgreaves",
-		items = { "t_com_bound_greaves_01" },
+		items     = { "t_com_bound_greaves_01" },
 		slots     = { types and types.Actor.EQUIPMENT_SLOT.Greaves },
 	},
 	["t_bound_waraxe"] = {
 		spellId   = "t_com_cnj_boundwaraxe",
-		items = { "t_com_bound_waraxe_01" },
+		items     = { "t_com_bound_waraxe_01" },
 		slots     = { types and types.Actor.EQUIPMENT_SLOT.CarriedRight },
 	},
 	["t_bound_warhammer"] = {
 		spellId   = "t_com_cnj_boundwarhammer",
-		items = { "t_com_bound_warhammer_01" },
+		items     = { "t_com_bound_warhammer_01" },
 		slots     = { types and types.Actor.EQUIPMENT_SLOT.CarriedRight },
 	},
 	["t_bound_pauldrons"] = {
 		spellId   = "t_com_cnj_boundpauldron",
-		items = { "t_com_bound_pauldronl_01", "t_com_bound_pauldronr_01" },
+		items     = { "t_com_bound_pauldronl_01", "t_com_bound_pauldronr_01" },
 		slots     = { types and types.Actor.EQUIPMENT_SLOT.LeftPauldron, types and types.Actor.EQUIPMENT_SLOT.RightPauldron },
 	},
 	["t_bound_greatsword"] = {
 		spellId   = "t_com_cnj_boundgreatsword",
-		items = { "t_com_bound_greatsword_01" },
+		items     = { "t_com_bound_greatsword_01" },
 		slots     = { types and types.Actor.EQUIPMENT_SLOT.CarriedRight },
 	},
 	-- NPC-only bound
 	["t_bound_hammerresdayn"] = {
 		spellId   = "t_de_cnj_uni_boundhammerresdayn",
-		items = { "t_com_bound_warhammer_01" },
+		items     = { "t_com_bound_warhammer_01" },
 		slots     = { types and types.Actor.EQUIPMENT_SLOT.CarriedRight },
 	},
 	["t_bound_razorresdayn"] = {
 		spellId   = "t_de_cnj_uni_boundrazororesdayn",
-		items = { "bound_dagger" },
+		items     = { "bound_dagger" },
 		slots     = { types and types.Actor.EQUIPMENT_SLOT.CarriedRight },
+	},
+	-- vanilla
+	["t_bound_battleaxe"] = {
+		items = { "bound_battleaxe" },
+		slots = { types and types.Actor.EQUIPMENT_SLOT.CarriedRight },
+	},
+	["t_bound_boots"] = {
+		items = { "bound_boots" },
+		slots = { types and types.Actor.EQUIPMENT_SLOT.Boots },
+	},
+	["t_bound_cuirass"] = {
+		items = { "bound_cuirass" },
+		slots = { types and types.Actor.EQUIPMENT_SLOT.Cuirass },
+	},
+	["t_bound_dagger"] = {
+		items = { "bound_dagger" },
+		slots = { types and types.Actor.EQUIPMENT_SLOT.CarriedRight },
+	},
+	["t_bound_gloves"] = {
+		items = { "bound_lefgauntlet", "bound_rigauntlet" },
+		slots = {
+			types and types.Actor.EQUIPMENT_SLOT.LeftGauntlet,
+			types and types.Actor.EQUIPMENT_SLOT.RightGauntlet,
+		},
+	},
+	["t_bound_helm"] = {
+		items = { "bound_helm" },
+		slots = { types and types.Actor.EQUIPMENT_SLOT.Helmet },
+	},
+	["t_bound_longbow"] = {
+		items = { "bound_longbow" },
+		slots = { types and types.Actor.EQUIPMENT_SLOT.CarriedRight },
+	},
+	["t_bound_longsword"] = {
+		items = { "bound_longsword" },
+		slots = { types and types.Actor.EQUIPMENT_SLOT.CarriedRight },
+	},
+	["t_bound_mace"] = {
+		items = { "bound_mace" },
+		slots = { types and types.Actor.EQUIPMENT_SLOT.CarriedRight },
+	},
+	["t_bound_shield"] = {
+		items = { "bound_shield" },
+		slots = { types and types.Actor.EQUIPMENT_SLOT.CarriedLeft },
+	},
+	["t_bound_spear"] = {
+		items = { "bound_spear" },
+		slots = { types and types.Actor.EQUIPMENT_SLOT.CarriedRight },
 	},
 }
 
-data.DISTRACT_SPELLS = {
-	["t_com_ilu_distractcreature"] = "creature",
-	["t_com_ilu_distracthumanoid"] = "humanoid",
+data.BOUND_BASE_WEIGHTS = {
+	-- TR
+	["t_com_bound_greaves_01"]    = 54,
+	["t_com_bound_waraxe_01"]     = 72,
+	["t_com_bound_warhammer_01"]  = 96,
+	["t_com_bound_pauldronl_01"]  = 30,
+	["t_com_bound_pauldronr_01"]  = 30,
+	["t_com_bound_greatsword_01"] = 81,
+	-- Vanilla
+	["bound_battleaxe"]  = 90,
+	["bound_boots"]      = 60,
+	["bound_cuirass"]    = 90,
+	["bound_dagger"]     = 9,
+	["bound_lefgauntlet"]= 15,
+	["bound_rigauntlet"] = 15,
+	["bound_helm"]       = 15,
+	["bound_longbow"]    = 24,
+	["bound_longsword"]  = 60,
+	["bound_mace"]       = 45,
+	["bound_shield"]     = 45,
+	["bound_spear"]      = 42,
 }
+-- missing:
+-- Daedric Shortsword
+-- Daedric Tanto
+-- Daedric Wakizashi
+-- Daedric Katana
+-- Daedric Dai-katana
+-- Daedric Staff
+-- Daedric Club
+-- Daedric Tower Shield
 
 data.KYNE_MARKER_ID = "t_aid_kyneinterventionmarker"
 
@@ -127,10 +202,7 @@ data.KYNE_MARKERS = {
 	}
 }
 
-data.PASSWALL_FORBIDDEN_DOORS = {
-	"trap", "cell", "tent", "grate", "bearskin",
-	"mystical", "skyrender", "vault",
-}
+data.PASSWALL_FORBIDDEN_DOORS = { "trap", "cell", "tent", "grate", "bearskin", "mystical", "skyrender", "vault", }
 
 data.PASSWALL_FORBIDDEN_MODELS = {
 	"force", "gg_", "water", "blight", "_grille_", "field",
@@ -140,50 +212,7 @@ data.PASSWALL_FORBIDDEN_MODELS = {
 	"act_sotha_red", "lava", "bug", "clearbox",
 }
 
-data.DISTRACT_VOICES = {
-	["Argonian"] = {
-		male   = { startLines = { "sound\\vo\\a\\m\\Idl_AM001.mp3", "sound\\vo\\a\\m\\Hlo_AM056.mp3" }, endLines = { "sound\\vo\\a\\m\\Idl_AM008.mp3" } },
-		female = { startLines = { "sound\\vo\\a\\f\\Idl_AF007.mp3", "sound\\vo\\a\\f\\Idl_AF004.mp3" }, endLines = { "sound\\vo\\a\\f\\Idl_AF002.mp3" } },
-	},
-	["Breton"] = {
-		male   = { startLines = {}, endLines = {} },
-		female = { startLines = { "sound\\vo\\b\\f\\Idl_BF001.mp3", "sound\\vo\\b\\f\\Idl_BF005.mp3" }, endLines = { "sound\\vo\\b\\f\\Idl_BF003.mp3" } },
-	},
-	["Dark Elf"] = {
-		male   = { startLines = { "sound\\vo\\d\\m\\Idl_DM006.mp3", "sound\\vo\\d\\m\\Idl_DM007.mp3" }, endLines = { "sound\\vo\\d\\m\\Idl_DM008.mp3" } },
-		female = { startLines = { "sound\\vo\\d\\f\\Idl_DF006.mp3" }, endLines = { "sound\\vo\\d\\f\\Idl_DF003.mp3" } },
-	},
-	["High Elf"] = {
-		male   = { startLines = { "sound\\vo\\h\\m\\Hlo_HM056.mp3" }, endLines = { "sound\\vo\\i\\m\\Idl_HF007.mp3" } },
-		female = { startLines = { "sound\\vo\\h\\f\\Hlo_HF056.mp3" }, endLines = { "sound\\vo\\i\\f\\Idl_HF007.mp3" } },
-	},
-	["Imperial"] = {
-		male   = { startLines = { "sound\\vo\\i\\m\\Idl_IM008.mp3", "sound\\vo\\i\\m\\Idl_IM003.mp3" }, endLines = { "sound\\vo\\i\\m\\Idl_IM005.mp3" } },
-		female = { startLines = { "sound\\vo\\i\\f\\Idl_IF001.mp3" }, endLines = { "sound\\vo\\i\\f\\Idl_IF009.mp3" } },
-	},
-	["Khajiit"] = {
-		male   = { startLines = { "sound\\vo\\k\\m\\Idl_KM005.mp3", "sound\\vo\\k\\m\\Idl_KM006.mp3", "sound\\vo\\k\\m\\Idl_KM007.mp3" }, endLines = { "sound\\vo\\k\\m\\Idl_KM002.mp3", "sound\\vo\\k\\m\\Idl_KM003.mp3" } },
-		female = { startLines = { "sound\\vo\\k\\f\\Idl_KF005.mp3", "sound\\vo\\k\\f\\Idl_KF006.mp3", "sound\\vo\\k\\f\\Idl_KF007.mp3" }, endLines = { "sound\\vo\\k\\f\\Idl_KF002.mp3", "sound\\vo\\k\\f\\Idl_KF003.mp3" } },
-	},
-	["Nord"] = {
-		male   = { startLines = { "sound\\vo\\n\\m\\Idl_NM001.mp3" }, endLines = { "sound\\vo\\n\\m\\Idl_NM009.mp3" } },
-		female = { startLines = { "sound\\vo\\n\\f\\Idl_NF002.mp3", "sound\\vo\\n\\f\\Idl_NF004.mp3" }, endLines = { "sound\\vo\\n\\f\\Idl_NM008.mp3" } },
-	},
-	["Orc"] = {
-		male   = { startLines = { "sound\\vo\\o\\m\\Idl_OM001.mp3", "sound\\vo\\o\\m\\Idl_OM002.mp3" }, endLines = { "sound\\vo\\o\\m\\Idl_OM004.mp3", "sound\\vo\\o\\m\\Idl_OM009.mp3" } },
-		female = { startLines = { "sound\\vo\\o\\f\\Idl_OF009.mp3" }, endLines = {} },
-	},
-	["Redguard"] = {
-		male   = { startLines = {}, endLines = {} },
-		female = { startLines = { "sound\\vo\\r\\f\\Idl_RF002.mp3", "sound\\vo\\r\\f\\Idl_RF008.mp3" }, endLines = { "sound\\vo\\r\\f\\Idl_RF003.mp3", "sound\\vo\\r\\f\\Idl_RF007.mp3" } },
-	},
-	["Wood Elf"] = {
-		male   = { startLines = { "sound\\vo\\w\\m\\Idl_WM009.mp3" }, endLines = { "sound\\vo\\w\\m\\Idl_WM006.mp3", "sound\\vo\\w\\m\\Idl_WM007.mp3" } },
-		female = { startLines = { "sound\\vo\\w\\f\\Idl_WF006.mp3", "sound\\vo\\w\\f\\Idl_WF009.mp3" }, endLines = { "sound\\vo\\w\\f\\Idl_WF003.mp3", "sound\\vo\\w\\f\\Idl_WF007.mp3" } },
-	},
-}
-
--- spell tomes
+-- Spell tomes
 data.TOME_DEFS = {
 	{
 		tomeId = "spelltome_tr_conj_bound",

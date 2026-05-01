@@ -46,15 +46,15 @@ G = {
 	onUseAction       = {}, -- (dt, use, sneak, run) -> nil|bool (bool overrides Use)
 	uiModeChangedJobs = {}, -- (data) {oldMode, newMode, arg}
 	onTeleportedJobs  = {},
-	eventHandlers = {}, -- returned eventHandlers
+	eventHandlers     = {}, -- player eventHandlers
 	
 	-- onUpdate Jobs.. but not *every* frame
 	sluggishJobs     = {},
 	sluggishIterator = nil,
 	
 	-- Helpers (assigned below)
-	scheduleJob             = nil, -- function to schedule an job (G.scheduleJob(fn, delaySec))
-	overrideSpell           = nil,
+	scheduleJob            = nil,
+	overrideSpell          = nil,
 	registerPreviewAction  = nil,
 }
 
