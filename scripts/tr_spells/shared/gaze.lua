@@ -18,7 +18,7 @@ G.onMgefAdded[EFFECT_ID] = function(key, eff, activeSpell, entry)
 	-- explicitly immune - fail
 	if trData.GAZE_VELOTH_IMMUNE[self.recordId:lower()] then
 		if caster then
-			caster:sendEvent('ShowMessage', { message = name .. " is shielded from the Gaze of Veloth." })
+			caster:sendEvent('ShowMessage', { message = name .. " transcends the Face of Veloth!" })
 		end
 		table.insert(G.pendingActiveSpellRemovals, activeSpell.activeSpellId)
 		return
@@ -30,15 +30,15 @@ G.onMgefAdded[EFFECT_ID] = function(key, eff, activeSpell, entry)
 		local ctype = types.Creature.record(self).type
 		local message
 		if id:find("dagoth_ur") then
-			message = "The Gaze of Veloth holds no power over one who has worn the Heart."
+			message = "Dagoth Ur laughs at the Face of Veloth!"
 		elseif ctype == types.Creature.TYPE.Humanoid
 			and (id:find("ash_") or id:find("dagoth_") or id:find("corprus_") or id == "ascended_sleeper")
 		then
-			message = name .. " is too far gone to the Blight for the Gaze to take hold."
+			message = name .. " has no mortal link to the Face of Veloth!"
 		elseif ctype == types.Creature.TYPE.Daedra then
-			message = "The Gaze of Veloth cannot unmake the daedra " .. name .. "."
+			message = name .. " does not care about the Face of Veloth!"
 		else
-			message = "The Gaze of Veloth only unmakes the flesh of mortals, not " .. name .. "."
+			message = name .. " cannot comprehend the Face of Veloth!"
 		end
 		if caster then
 			caster:sendEvent('ShowMessage', { message = message })
