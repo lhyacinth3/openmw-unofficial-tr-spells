@@ -202,7 +202,65 @@ data.KYNE_MARKERS = {
 	}
 }
 
-data.PASSWALL_FORBIDDEN_DOORS = { "trap", "cell", "tent", "grate", "bearskin", "mystical", "skyrender", "vault", }
+-- =====================================================
+-- Gaze of Veloth
+-- =====================================================
+
+data.GAZE_VELOTH_MESHES = {
+	skeleton_01    = "meshes/tr/c/tr_skeleton_veloth.nif",
+	skeletonarg_01 = "meshes/tr/c/tr_skeleton_arg_veloth.nif",
+	skeletonkha_01 = "meshes/tr/c/tr_skeleton_kha_veloth.nif",
+	skeletonkha_02 = "meshes/tr/c/tr_skeleton_khb_veloth.nif",
+	skeletonorc_01 = "meshes/tr/c/tr_skeleton_orc_veloth.nif",
+}
+
+data.GAZE_VELOTH_FALLBACK_KEY = "skeleton_01"
+
+data.GAZE_VELOTH_SKELETONS = {
+	["argonian"]          = "skeletonarg_01",
+	["breton"]            = "skeleton_01",
+	["dark elf"]          = "skeleton_01",
+	["high elf"]          = "skeleton_01",
+	["imperial"]          = "skeleton_01",
+	["khajiit"]           = "skeletonkha_01",
+	["nord"]              = "skeleton_01",
+	["orc"]               = "skeletonorc_01",
+	["redguard"]          = "skeleton_01",
+	["wood elf"]          = "skeleton_01",
+	["t_cnq_chimeriquey"] = "skeleton_01",
+	["t_cnq_keptu"]       = "skeleton_01",
+	["t_els_cathay"]      = "skeletonkha_02",
+	["t_els_cathay-raht"] = "skeletonkha_01",
+	["t_els_dagi-raht"]   = "skeletonkha_01",
+	["t_els_ohmes"]       = "skeleton_01",
+	["t_els_ohmes-raht"]  = "skeleton_01",
+	["t_els_suthay"]      = "skeletonkha_02",
+	["t_hr_riverfolk"]    = "skeleton_01",
+	["t_mw_malahk_orc"]   = "skeletonorc_01",
+	["t_pya_seaelf"]      = "skeleton_01",
+	["t_sky_hill_giant"]  = "skeleton_01",
+	["t_sky_reachman"]    = "skeleton_01",
+	["t_yne_ynesai"]      = "skeleton_01",
+}
+
+data.GAZE_VELOTH_IMMUNE = {
+	["vivec_god"] = true,
+	["almalexia"] = true,
+	["almalexia_warrior"] = true,
+	["divayth fyr"] = true,
+	["sky_qre_kwmg6_azra"] = true,
+	["wulf"] = true,
+}
+
+-- need message boxes for when trying to use veloth's gaze on ^ those actors
+-- ["magic.gazeOfVelothImmune"] = "%s transcends the Face of Veloth!",
+-- ["magic.gazeOfVelothDagoth"] = "Dagoth Ur laughs at the Face of Veloth!",
+-- ["magic.gazeOfVelothAsh"] = "%s has no mortal link to the Face of Veloth!",
+-- ["magic.gazeOfVelothDaedra"] = "%s does not care about the Face of Veloth!",
+-- ["magic.gazeOfVelothCreature"] = "%s cannot comprehend the Face of Veloth!",
+-- ["magic.gazeOfVelothOther"] = "%s is unaffected by the Face of Veloth!",
+
+data.PASSWALL_FORBIDDEN_DOORS = { "trap", "cell", "tent", "grate", "bearskin", "mystical", "skyrender", "vault" }
 
 data.PASSWALL_FORBIDDEN_MODELS = {
 	"force", "gg_", "water", "blight", "_grille_", "field",

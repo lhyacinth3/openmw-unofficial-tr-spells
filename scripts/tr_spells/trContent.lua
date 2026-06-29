@@ -111,7 +111,6 @@ local descriptions = {
 	-- boundThrowingKnivesDesc = "The spell effect conjures a lesser Daedra bound in the form of magical, wondrously light Daedric throwing knives. The throwing knives appear automatically equipped on the caster, displacing any currently equipped weapon to inventory. When the effect ends, the throwing knives disappear, and any previously equipped weapon is automatically re-equipped.",
 }
 
-
 -- =====================================================
 -- SUMMON EFFECTS
 -- =====================================================
@@ -184,6 +183,82 @@ defineVanillaScaledBound("t_bound_mace",      "Bound Mace",       "boundmace")
 defineVanillaScaledBound("t_bound_shield",    "Bound Shield",     "boundshield")
 defineVanillaScaledBound("t_bound_spear",     "Bound Spear",      "boundspear")
 
+
+if BOUND_VANILLA_PATCH then
+	-- vanilla effect id -> scaled effect id
+	local vanillaToScaled = {
+		boundbattleaxe = "t_bound_battleaxe",
+		boundboots     = "t_bound_boots",
+		boundcuirass   = "t_bound_cuirass",
+		bounddagger    = "t_bound_dagger",
+		boundgloves    = "t_bound_gloves",
+		boundhelm      = "t_bound_helm",
+		boundlongbow   = "t_bound_longbow",
+		boundlongsword = "t_bound_longsword",
+		boundmace      = "t_bound_mace",
+		boundshield    = "t_bound_shield",
+		boundspear     = "t_bound_spear",
+	}
+
+	local function patchEffects(effects)
+		if not effects then return nil end
+		local changed = false
+		local out = {}
+		local i = 1
+		while true do
+			local e = effects[i]
+			if e == nil then break end
+			local mapped = e.id and vanillaToScaled[e.id:lower()]
+			if mapped then changed = true end
+			out[i] = {
+				id                = mapped or e.id,
+				range             = e.range,
+				area              = e.area,
+				duration          = e.duration,
+				magnitudeMin      = e.magnitudeMin,
+				magnitudeMax      = e.magnitudeMax,
+				affectedAttribute = e.affectedAttribute,
+				affectedSkill     = e.affectedSkill,
+			}
+			i = i + 1
+		end
+		if changed then return out end
+		return nil
+	end
+	
+	-- spells
+	for id, rec in pairs(content.spells.records) do
+		local patched = patchEffects(rec.effects)
+		if patched then
+			content.spells.records[id].effects = patched
+		end
+	end
+
+	-- enchantments
+	for id, rec in pairs(content.enchantments.records) do
+		local patched = patchEffects(rec.effects)
+		if patched then
+			content.enchantments.records[id].effects = patched
+		end
+	end
+
+	-- potions
+	for id, rec in pairs(content.potions.records) do
+		local patched = patchEffects(rec.effects)
+		if patched then
+			content.potions.records[id].effects  = patched
+		end
+	end
+
+	-- ingredients
+	for id, rec in pairs(content.ingredients.records) do
+		local patched = patchEffects(rec.effects)
+		if patched then
+			content.ingredients.records[id].effects = patched
+		end
+	end
+end
+
 -- =====================================================
 -- OTHER EFFECTS
 -- =====================================================
@@ -209,7 +284,7 @@ defineEffect("t_restoration_weaponresartus", "Weapon Resartus", "restorehealth",
 defineEffect("t_illusion_distractcreature", "Distract Creature", "chameleon", EFFECT_COST_DISTRACT_CREATURE, "td/s/td_s_dist_cre.tga", {description = descriptions.distractCreatureDesc})
 defineEffect("t_illusion_distracthumanoid", "Distract Humanoid", "chameleon", EFFECT_COST_DISTRACT_HUMANOID, "td/s/td_s_dist_hum.tga", {description = descriptions.distractHumanoidDesc})
 defineEffect("t_mysticism_banishdae", "Banish Daedra", "dispel", EFFECT_COST_BANISH_DAE, "td/s/td_s_ban_daedra.tga", {school = "mysticism", unreflectable = true, description = descriptions.banishDesc})
---defineEffect("t_destruction_gazeofveloth", "Gaze of Veloth", "damagehealth", 80, "td/s/td_s_gaze_veloth.tga")
+defineEffect("t_destruction_gazeofveloth", "Gaze of Veloth", "damagehealth", 80, "td/s/td_s_gaze_veloth.tga", {school = "destruction", description = descriptions.gazeOfVelothDesc})
 --defineEffect("t_conjuration_sanguinerose", "Sanguine Rose", "summondaedroth", 40, "td/s/td_s_sanguine.tga")
 
 -- =====================================================
@@ -463,21 +538,6 @@ local function eff(id, range, area, duration, magMin, magMax, attribute, skill)
 	}
 end
 
--- Vanilla bound -> scaled bound
-local boundRemap = {
-	boundbattleaxe = "t_bound_battleaxe",
-	boundboots     = "t_bound_boots",
-	boundcuirass   = "t_bound_cuirass",
-	bounddagger    = "t_bound_dagger",
-	boundgloves    = "t_bound_gloves",
-	boundhelm      = "t_bound_helm",
-	boundlongbow   = "t_bound_longbow",
-	boundlongsword = "t_bound_longsword",
-	boundmace      = "t_bound_mace",
-	boundshield    = "t_bound_shield",
-	boundspear     = "t_bound_spear",
-}
-
 -- =====================================================
 -- ENCHANTMENTS
 -- =====================================================
@@ -530,11 +590,11 @@ local enchantmentPatches = {
 	-- other summons
 	["t_once_ayldaedricherald1"] = { type = CastOnce, effects = { eff("t_summon_welkyndspirit", Self, 0, 30, 1, 1) } }, -- Scroll of Spurred Incomers
 	["t_once_ayldaedricherald2"] = { type = CastOnce, effects = { eff("t_summon_auroran", Self, 0, 30, 1, 1) } }, -- Scroll of Strange Incomers
-	["t_once_ayllorearmor1"] = { type = CastOnce, effects = { eff("t_alteration_radshield", Self, 0, 30, 1, 1) } }, -- Scroll of Doctrine Panoply
+	["t_once_ayllorearmor1"] = { type = CastOnce, effects = { eff("t_alteration_radshield", Self, 0, 30, 20, 20) } }, -- Scroll of Doctrine Panoply
 	["t_once_boethiahservice"] = { type = CastOnce, effects = { eff("summonhunger", Self, 0, 120, 1, 1), eff("t_summon_devourer", Self, 0, 60, 1, 1) } }, -- Scroll of Boethiah's Service
 	["t_once_fourarmsgoingup"] = { -- Scroll of Four Arms Going Up
 		type = CastOnce, 
-		effects = { 
+		effects = {
 			eff("summonscamp", Self, 0, 120, 1, 1),
 			eff("summondremora", Self, 0, 120, 1, 1),
 			eff("t_summon_morphoid", Self, 0, 120, 1, 1),
@@ -547,7 +607,6 @@ local enchantmentPatches = {
 		eff("summonwingedtwilight", Self, 0, 60, 1, 1),
 		eff("t_summon_spiderdaedra", Self, 0, 60, 1, 1),
 		eff("summonhunger", Self, 0, 60, 1, 1),
-		eff("t_summon_herne", Self, 0, 120, 1, 1)
 		},
 	},
 	["t_once_fourcorners"] = { -- Scroll of The Four Corners
@@ -566,7 +625,7 @@ local enchantmentPatches = {
 	["t_once_gramaryemirror"] = { type = CastOnce, effects = { eff("t_mysticism_reflectdmg", Self, 0, 30, 20, 20), eff("reflect", Self, 0, 30, 20, 20) }, },
 	["t_once_dashing"] = { type = CastOnce, effects = { eff("t_mysticism_blink", Self, 0, 0, 40, 40) } },	
 	["t_once_deificchrisom"] = { type = CastOnce, effects = { eff("t_mysticism_reflectdmg", Self, 0, 60, 10, 30), eff("spellAbsorption", Self, 0, 60, 10, 30), eff("sanctuary", Self, 0, 60, 10, 30) }, },
-	["t_once_assassinrush"] = { type = CastOnce, effects = { eff("t_mysticism_blink", Self, 0, 0, 30, 30), eff("fortifyattack", Self, 0, 60, 10, 20), eff("fortifyskill", Self, 0, 120, 40, 40, nil, "shortblade")} },
+	["t_once_assassinrush"] = { type = CastOnce, effects = { eff("t_mysticism_blink", Self, 0, 0, 30, 30), eff("fortifyattack", Self, 0, 60, 10, 20), eff("fortifyskill", Self, 0, 60, 10, 20, nil, "shortblade")} },
 	-- restoration
 	["t_once_qorwynnmending"] = { type = CastOnce, effects = { eff("t_restoration_armorresartus", Self, 0, 0, 30, 30), eff("t_restoration_weaponresartus", Self, 0, 0, 30, 30) }, },
 	["t_once_firmament"] = { type = CastOnce, effects = { eff("fortifyattack", Self, 0, 120, 40, 40), eff("t_restoration_fortifycasting", Self, 0, 120, 40, 40), eff("fortifyskill", Self, 0, 120, 40, 40, nil, "sneak")}, },
@@ -675,22 +734,14 @@ local enchantmentPatches = {
 			},
 		},
 	},
---[[	-- veloth's staff
+	-- veloth's staff: cast-on-use instakill that leaves a skeleton
 	["t_strike_staffveloth"] = {
 		type = CastOnUse,
-	--	charge = 900,
-	--	cost = 300,
 		effects = {
-			{
-				id = "t_destruction_gazeofveloth",
-				range = Target,
-				area = 0,
-				duration = 1,
-				magnitudeMin = 1,
-				magnitudeMax = 1,
-			},
+			eff("t_destruction_gazeofveloth", Target, 0, 1, 1, 1),
 		},
 	},
+--[[
 	-- sanguine rose
 	["tr_m1_sanguinesrose_en"] = {
 		type = CastOnUse,
@@ -753,6 +804,608 @@ for id, patch in pairs(enchantmentPatches) do
 			cost = orig.cost,
 			effects = effects,
 		}
+	end
+end
+
+-- =====================================================
+-- INGREDIENT PATCHES
+-- =====================================================
+
+local ingredientPatches = {
+	["T_IngFlor_PBloomBulb_01"] = {
+		{ id = "Poison" },
+		{ id = "t_mysticism_reflectdmg" },
+		{ id = "DamageFatigue" },
+		{ id = "Light" },
+	},
+	["T_IngCrea_Eyestar_01"] = {
+		{ id = "NightEye" },
+		{ id = "t_mysticism_insight" },
+		{ id = "WeaknessToMagicka" },
+		{ id = "WaterBreathing" },
+	},
+	["T_IngCrea_EyestarDae_01"] = {
+		{ id = "NightEye" },
+		{ id = "t_mysticism_insight" },
+		{ id = "WeaknessToMagicka" },
+		{ id = "WaterBreathing" },
+	},
+	["T_IngCrea_BeetleShell_01"] = {
+		{
+			id = "FortifyAttribute",
+			affectedAttribute = "endurance",
+		},
+		{ id = "t_mysticism_insight" },
+	},
+	["T_IngCrea_BeetleShell_04"] = {
+		{
+			id = "FortifyAttribute",
+			affectedAttribute = "endurance",
+		},
+		{ id = "t_mysticism_reflectdmg" },
+	},
+	["T_IngMine_PearlBlue_01"] = {
+		{
+			id = "DamageAttribute",
+			affectedAttribute = "intelligence",
+		},
+		{ id = "RestoreMagicka" },
+		{ id = "t_mysticism_insight" },
+		{ id = "FortifyMaximumMagicka" },
+	},
+	["T_IngMine_PearlBlueDae_01"] = {
+		{
+			id = "DamageAttribute",
+			affectedAttribute = "intelligence",
+		},
+		{ id = "RestoreMagicka" },
+		{ id = "t_mysticism_insight" },
+		{ id = "FortifyMaximumMagicka" },
+	},
+	["T_IngMine_PearlKardesh_01"] = {
+		{ id = "Silence" },
+		{ id = "WaterBreathing" },
+		{
+			id = "DamageAttribute",
+			affectedAttribute = "luck",
+		},
+		{ id = "t_restoration_fortifycasting" },
+	},
+	["T_IngMine_DiamondRed_01"] = {
+		{
+			id = "DrainAttribute",
+			affectedAttribute = "endurance",
+		},
+		{ id = "Invisibility" },
+		{ id = "t_mysticism_reflectdmg" },
+		{ id = "ResistFire" },
+	},
+-- only one occurance
+--		["T_IngCrea_PrismaticDust_01"] = {
+--			-- Change to Prismatic Light once OpenMW supports it
+--			{ id = "Light" },
+--			{ id = "t_alteration_radshield" },
+--			{ id = "Blind" },
+--			{ id = "RestoreMagicka" },
+--		},
+	["T_IngCrea_MothWingMw_02"] = {
+		{ id = "ResistFire" },
+		{
+			id = "DrainAttribute",
+			affectedAttribute = "speed",
+		},
+		{ id = "ResistMagicka" },
+		{ id = "t_mysticism_insight" },
+	},
+--	["T_IngMine_Amethyst_01"] = {
+--		{ id = "t_mysticism_detinvisibility" },
+--		{ id = "DrainFatigue" },
+--		{ id = "CureCommonDisease" },
+--		{
+--			id = "RestoreAttribute",
+--			affectedAttribute = "willpower",
+--		},
+--	},
+--	["T_IngMine_AmethystDae_01"] = {
+--		{ id = "t_mysticism_detinvisibility" },
+--		{ id = "DrainFatigue" },
+--		{ id = "CureCommonDisease" },
+--		{
+--			id = "RestoreAttribute",
+--			affectedAttribute = "willpower",
+--		},
+--	},
+--	["T_IngFood_TGuarHide"] = {
+--		{ id = "DrainMagicka" },
+--		{
+--			id = "FortifyAttribute",
+--			affectedAttribute = "strength",
+--		},
+--		{
+--			id = "RestoreAttribute",
+--			affectedAttribute = "speed",
+--		},
+--		{ id = "t_mysticism_detinvisibility" },
+--	},
+--	["T_IngCrea_ThresherClaw_01"] = {
+--		{
+--			id = "FortifyAttribute",
+--			affectedAttribute = "strength",
+--		},
+--		{ id = "ResistFire" },
+--		{ id = "WeaknessToFrost" },
+--		{ id = "t_mysticism_detenemy" },
+--	},
+--	["T_IngFlor_TempleDome_01"] = {
+--		{ id = "Blind" },
+--		{ id = "Burden" },
+--		{ id = "t_mysticism_detinvisibility" },
+--		{ id = "Shield" },
+--	},
+--	["T_IngCrea_ArmunHide_01"] = {
+--		{ id = "ResistNormalWeapons" },
+--		{ id = "t_mysticism_dethuman" },
+--		{ id = "ResistFire" },
+--		{ id = "WeaknessToFrost" },
+--	},
+--	["T_IngCrea_RakiTeeth_01"] = {
+--		{ id = "DrainHealth" },
+--		{ id = "WeaknessToShock" },
+--		{ id = "t_mysticism_dethuman" },
+--		{ id = "Jump" },
+--	},
+--	["T_IngCrea_Dragonscales_01"] = {
+--		{ id = "DamageHealth" },
+--		{ id = "t_mysticism_detenemy" },
+--		{ id = "FireShield" },
+--		{ id = "Silence" },
+--	},
+--	["T_IngCrea_DridreaSilk_01"] = {
+--		{ id = "Burden" },
+--		{ id = "NightEye" },
+--		{ id = "t_mysticism_detenemy" },
+--		{
+--			id = "DamageAttribute",
+--			affectedAttribute = "endurance",
+--		},
+--	},
+--	["T_IngCrea_MothWingCyr_02"] = {
+--		{
+--			id = "DrainAttribute",
+--			affectedAttribute = "willpower",
+--		},
+--		{ id = "t_mysticism_dethuman" },
+--		{ id = "FortifyMagicka" },
+--		{ id = "ResistMagicka" },
+--	},
+---	["T_IngCrea_MothWingSky_03"] = {
+---		{
+---			id = "FortifyAttribute",
+---			affectedAttribute = "agility",
+---		},
+---		{
+---			id = "DrainAttribute",
+---			affectedAttribute = "strength",
+---		},
+---		{ id = "t_mysticism_blink" },
+---	},
+--	["T_IngFood_MeatDolphin_01"] = {
+--		{ id = "Jump" },
+--		{ id = "SwiftSwim" },
+--		{ id = "Sanctuary" },
+--		{ id = "t_mysticism_detinvisibility" },
+--	},
+--	["T_IngFlor_Indulcet_01"] = {
+--		{
+--			id = "FortifyAttribute",
+--			affectedAttribute = "personality",
+--		},
+--		{ id = "t_mysticism_detinvisibility" },
+--		{ id = "Sanctuary" },
+--		{
+--			id = "DamageAttribute",
+--			affectedAttribute = "agility",
+--		},
+--	},
+--	["T_IngFlor_FlaxFlower_01"] = {
+--		{ id = "FortifyFatigue" },
+--		{ id = "t_mysticism_detinvisibility" },
+--		{ id = "WeaknessToFire" },
+--		{ id = "FrostShield" },
+--	},
+--	["T_IngFlor_FlaxFlower_02"] = {
+--		{ id = "FortifyFatigue" },
+--		{ id = "t_mysticism_detenemy" },
+--		{ id = "WeaknessToFire" },
+--		{ id = "FireShield" },
+--	},
+--	["T_IngFlor_FlaxFlower_03"] = {
+--		{ id = "FortifyFatigue" },
+--		{ id = "t_mysticism_dethuman" },
+--		{ id = "WeaknessToFire" },
+--		{ id = "Dispel" },
+--	},
+--	["T_IngFlor_ArrowrootFlower_01"] = {
+--		{
+--			id = "RestoreAttribute",
+--			affectedAttribute = "agility",
+--		},
+--		{
+--			id = "DamageAttribute",
+--			affectedAttribute = "luck",
+--		},
+--		{ id = "t_mysticism_detenemy" },
+--		{ id = "NightEye" },
+--	},
+--	["T_IngFlor_Spiddal_01"] = {
+--		{ id = "DamageHealth" },
+--		{ id = "DamageMagicka" },
+--		{ id = "FireDamage" },
+--		{ id = "t_mysticism_detenemy" },
+--	},
+--	["T_IngFlor_Peony_01"] = {
+--		{
+--			id = "RestoreAttribute",
+--			affectedAttribute = "strength",
+--		},
+--		{ id = "DamageHealth" },
+--		{
+--			id = "DamageAttribute",
+--			affectedAttribute = "speed",
+--		},
+--		{ id = "t_mysticism_dethuman" },
+--	},
+	["T_IngSpice_Curcuma_01"] = {
+		{ id = "t_mysticism_reflectdmg" },
+		{ id = "WeaknessToFire" },
+		{
+			id = "DamageAttribute",
+			affectedAttribute = "strength",
+		},
+		{ id = "ResistParalysis" },
+	},
+	["T_IngCrea_CetaceanMelon"] = {
+		{ id = "DetectAnimal" },
+		{ id = "t_mysticism_reflectdmg" },
+		{ id = "Sound" },
+		{
+			id = "DamageAttribute",
+			affectedAttribute = "personality",
+		},
+	},
+	["T_IngFlor_Siyat_01"] = {
+		{ id = "t_mysticism_insight" },
+		{ id = "ResistParalysis" },
+		{ id = "DamageMagicka" },
+		{ id = "Dispel" },
+	},
+	["T_IngCrea_HagravenFeathers_01"] = {
+		{ id = "DamageMagicka" },
+		{ id = "FortifyAttack" },
+		{ id = "WeaknessToShock" },
+		{ id = "t_restoration_fortifycasting" },
+	},
+	["T_IngSpice_Cinnamon_01"] = {
+		{ id = "FireDamage" },
+		{ id = "t_restoration_fortifycasting" },
+		{ id = "DamageFatigue" },
+	},
+	["T_IngMine_Spellstone_01"] = {
+		{ id = "t_restoration_fortifycasting" },
+		{ id = "SpellAbsorption" },
+		{ id = "RestoreMagicka" },
+		{ id = "Telekinesis" },
+	},
+	["T_IngSpice_Pepper_01"] = {
+		{
+			id = "DrainAttribute",
+			affectedAttribute = "personality",
+		},
+		{ id = "ResistMagicka" },
+		{ id = "FireDamage" },
+		{ id = "t_mysticism_insight" },
+	},
+	["T_IngFlor_MonksTons_01"] = {
+		{ id = "t_mysticism_insight" },
+		{ id = "Blind" },
+		{
+			id = "FortifyAttribute",
+			affectedAttribute = "willpower",
+		},
+		{
+			id = "DrainAttribute",
+			affectedAttribute = "personality",
+		},
+	},
+}
+
+-- Apply ingredient patches
+for id, newEffects in pairs(ingredientPatches) do
+	local orig = content.ingredients.records[id:lower()]
+	if orig then
+		content.ingredients.records[id:lower()] = {
+			id = orig.id,
+			name = orig.name,
+			model = orig.model,
+			icon = orig.icon,
+			mwscript = orig.mwscript,
+			weight = orig.weight,
+			value = orig.value,
+			--template = orig,
+			effects = newEffects,
+		}
+	end
+end
+
+-- =====================================================
+-- POTION PATCHES
+-- =====================================================
+
+local potionPatches = {
+	["T_Com_Potion_ReflectDamage_B"] = {
+		name = "Bargain Potion of Reflect Dmg",
+		effects = {
+			{
+				id = "t_mysticism_reflectdmg",
+				range = content.RANGE.Self,
+				duration = 8,
+				magnitudeMin = 5,
+				magnitudeMax = 5,
+			},
+		},
+	},
+	["T_Com_Potion_ReflectDamage_C"] = {
+		name = "Cheap Potion of Reflect Dmg",
+		effects = {
+			{
+				id = "t_mysticism_reflectdmg",
+				range = content.RANGE.Self,
+				duration = 15,
+				magnitudeMin = 8,
+				magnitudeMax = 8,
+			},
+		},
+	},
+	["T_Com_Potion_ReflectDamage_S"] = {
+		name = "Standard Potion of Reflect Dmg",
+		effects = {
+			{
+				id = "t_mysticism_reflectdmg",
+				range = content.RANGE.Self,
+				duration = 30,
+				magnitudeMin = 10,
+				magnitudeMax = 10,
+			},
+		},
+	},
+	["T_Com_Potion_ReflectDamage_Q"] = {
+		name = "Quality Potion of Reflect Dmg",
+		effects = {
+			{
+				id = "t_mysticism_reflectdmg",
+				range = content.RANGE.Self,
+				duration = 45,
+				magnitudeMin = 15,
+				magnitudeMax = 15,
+			},
+		},
+	},
+	["T_Com_Potion_ReflectDamage_E"] = {
+		name = "Exclusive Potion of Reflect Dmg",
+		effects = {
+			{
+				id = "t_mysticism_reflectdmg",
+				range = content.RANGE.Self,
+				duration = 60,
+				magnitudeMin = 20,
+				magnitudeMax = 20,
+			},
+		},
+	},
+	["T_Com_Potion_Insight_B"] = {
+		name = "Bargain Potion of Insight",
+		effects = {
+			{
+				id = "t_mysticism_insight",
+				range = content.RANGE.Self,
+				duration = 8,
+				magnitudeMin = 5,
+				magnitudeMax = 5,
+			},
+		},
+	},
+	["T_Com_Potion_Insight_C"] = {
+		name = "Cheap Potion of Insight",
+		effects = {
+			{
+				id = "t_mysticism_insight",
+				range = content.RANGE.Self,
+				duration = 15,
+				magnitudeMin = 8,
+				magnitudeMax = 8,
+			},
+		},
+	},
+	["T_Com_Potion_Insight_S"] = {
+		name = "Standard Potion of Insight",
+		effects = {
+			{
+				id = "t_mysticism_insight",
+				range = content.RANGE.Self,
+				duration = 30,
+				magnitudeMin = 10,
+				magnitudeMax = 10,
+			},
+		},
+	},
+	["T_Com_Potion_Insight_Q"] = {
+		name = "Quality Potion of Insight",
+		effects = {
+			{
+				id = "t_mysticism_insight",
+				range = content.RANGE.Self,
+				duration = 45,
+				magnitudeMin = 15,
+				magnitudeMax = 15,
+			},
+		},
+	},
+	["T_Com_Potion_Insight_E"] = {
+		name = "Exclusive Potion of Insight",
+		effects = {
+			{
+				id = "t_mysticism_insight",
+				range = content.RANGE.Self,
+				duration = 60,
+				magnitudeMin = 20,
+				magnitudeMax = 20,
+			},
+		},
+	},
+--	["T_Com_Potion_Detect_Humanoid_S"] = {
+--		name = "Potion of Detect Humanoid",
+--		effects = {
+--			{
+--				id = "t_mysticism_dethuman",
+--				range = content.RANGE.Self,
+--				duration = 15,
+--				magnitudeMin = 10,
+--				magnitudeMax = 10,
+--			},
+--		},
+--	},
+--	["T_Com_Potion_Detect_Enemy_S"] = {
+--		name = "Potion of Detect Enemies",
+--		effects = {
+--			{
+--				id = "t_mysticism_detenemy",
+--				range = content.RANGE.Self,
+--				duration = 15,
+--				magnitudeMin = 10,
+--				magnitudeMax = 10,
+--			},
+--		},
+--	},
+--	["T_Com_Potion_Detect_Invisib_S"] = {
+--		name = "Potion of Detect Invisibility",
+--		effects = {
+--			{
+--				id = "t_mysticism_detinvisibility",
+--				range = content.RANGE.Self,
+--				duration = 15,
+--				magnitudeMin = 10,
+--				magnitudeMax = 10,
+--			},
+--		},
+--	},
+--	["T_Com_Potion_Eyes"] = {
+--		effects = {
+--			{
+--				id = "DetectAnimal",
+--				range = content.RANGE.Self,
+--				duration = 60,
+--				magnitudeMin = 50,
+--				magnitudeMax = 50,
+--			},
+--			{
+--				id = "t_mysticism_dethuman",
+--				range = content.RANGE.Self,
+--				duration = 60,
+--				magnitudeMin = 50,
+--				magnitudeMax = 50,
+--			},
+--			{
+--				id = "DetectEnchantment",
+--				range = content.RANGE.Self,
+--				duration = 60,
+--				magnitudeMin = 50,
+--				magnitudeMax = 50,
+--			},
+--			{
+--				id = "DetectKey",
+--				range = content.RANGE.Self,
+--				duration = 60,
+--				magnitudeMin = 50,
+--				magnitudeMax = 50,
+--			},
+--			{
+--				id = "NightEye",
+--				range = content.RANGE.Self,
+--				duration = 60,
+--				magnitudeMin = 50,
+--				magnitudeMax = 50,
+--			},
+--		},
+--	},
+	["T_Com_Potion_FortifyCasting_B"] = {
+		effects = {
+			{
+				id = "t_restoration_fortifycasting",
+				range = content.RANGE.Self,
+				duration = 8,
+				magnitudeMin = 5,
+				magnitudeMax = 5,
+			},
+		},
+	},
+	["T_Com_Potion_FortifyCasting_C"] = {
+		effects = {
+			{
+				id = "t_restoration_fortifycasting",
+				range = content.RANGE.Self,
+				duration = 15,
+				magnitudeMin = 8,
+				magnitudeMax = 8,
+			},
+		},
+	},
+	["T_Com_Potion_FortifyCasting_S"] = {
+		effects = {
+			{
+				id = "t_restoration_fortifycasting",
+				range = content.RANGE.Self,
+				duration = 30,
+				magnitudeMin = 10,
+				magnitudeMax = 10,
+			},
+		},
+	},
+	["T_Com_Potion_FortifyCasting_Q"] = {
+		effects = {
+			{
+				id = "t_restoration_fortifycasting",
+				range = content.RANGE.Self,
+				duration = 45,
+				magnitudeMin = 15,
+				magnitudeMax = 15,
+			},
+		},
+	},
+	["T_Com_Potion_FortifyCasting_E"] = {
+		effects = {
+			{
+				id = "t_restoration_fortifycasting",
+				range = content.RANGE.Self,
+				duration = 60,
+				magnitudeMin = 20,
+				magnitudeMax = 20,
+			},
+		},
+	},
+}
+
+-- Apply potion patches
+for id, patch in pairs(potionPatches) do
+	local orig = content.potions.records[id]
+	if orig then
+		local newRecord = {
+			template = orig,
+			effects = patch.effects,
+		}
+		if patch.name then
+			newRecord.name = patch.name
+		end
+		content.potions.records[id:lower()] = newRecord
 	end
 end
 
@@ -821,85 +1474,6 @@ defineTome("spelltome_tr_alt",         "Spell Tome: Alteration",  "alt")
 defineTome("spelltome_tr_ilu",         "Spell Tome: Illusion",    "ilu")
 
 -- =====================================================
--- BOUND ITEMS PATCH
--- =====================================================
-
-if BOUND_VANILLA_PATCH then
-	-- vanilla effect id -> scaled effect id
-	local vanillaToScaled = {
-		boundbattleaxe = "t_bound_battleaxe",
-		boundboots     = "t_bound_boots",
-		boundcuirass   = "t_bound_cuirass",
-		bounddagger    = "t_bound_dagger",
-		boundgloves    = "t_bound_gloves",
-		boundhelm      = "t_bound_helm",
-		boundlongbow   = "t_bound_longbow",
-		boundlongsword = "t_bound_longsword",
-		boundmace      = "t_bound_mace",
-		boundshield    = "t_bound_shield",
-		boundspear     = "t_bound_spear",
-	}
-
-	local function patchEffects(effects)
-		if not effects then return nil end
-		local changed = false
-		local out = {}
-		local i = 1
-		while true do
-			local e = effects[i]
-			if e == nil then break end
-			local mapped = e.id and vanillaToScaled[e.id:lower()]
-			if mapped then changed = true end
-			out[i] = {
-				id                = mapped or e.id,
-				range             = e.range,
-				area              = e.area,
-				duration          = e.duration,
-				magnitudeMin      = e.magnitudeMin,
-				magnitudeMax      = e.magnitudeMax,
-				affectedAttribute = e.affectedAttribute,
-				affectedSkill     = e.affectedSkill,
-			}
-			i = i + 1
-		end
-		if changed then return out end
-		return nil
-	end
-	
-	-- spells
-	for id, rec in pairs(content.spells.records) do
-		local patched = patchEffects(rec.effects)
-		if patched then
-			content.spells.records[id].effects = patched
-		end
-	end
-	
-	-- enchantments
-	for id, rec in pairs(content.enchantments.records) do
-		local patched = patchEffects(rec.effects)
-		if patched then
-			content.enchantments.records[id].effects = patched
-		end
-	end
-	
-	-- potions
-	for id, rec in pairs(content.potions.records) do
-		local patched = patchEffects(rec.effects)
-		if patched then
-			content.potions.records[id].effects  = patched
-		end
-	end
-	
-	-- ingredients
-	for id, rec in pairs(content.ingredients.records) do
-		local patched = patchEffects(rec.effects)
-		if patched then
-			content.ingredients.records[id].effects = patched
-		end
-	end
-end
-
--- =====================================================
 -- TESTING
 -- =====================================================
 
@@ -953,3 +1527,21 @@ defineSpell("t_test_summonall", {
 		{ id = "t_summon_spiderdaedra",     range = content.RANGE.Self, duration = 60, magnitudeMin = 1, magnitudeMax = 1 },
 	},
 })
+
+--[[
+T_B_GazeVeloth_SkeletonArg_01 = 
+T_C_GazeVeloth_SkeletonArg_01 = 
+T_B_GazeVeloth_Skeleton_01 = 
+T_C_GazeVeloth_Skeleton_01 = 
+T_B_GazeVeloth_SkeletonKha_01 = 
+T_C_GazeVeloth_SkeletonKha_01 = 
+T_B_GazeVeloth_SkeletonOrc_01 = 
+T_C_GazeVeloth_SkeletonOrc_01 = 
+T_B_GazeVeloth_SkeletonKha_02 = 
+T_C_GazeVeloth_SkeletonKha_02 = 
+]]
+-- meshes/tr/c/tr_skeleton_arg_veloth.nif
+-- meshes/tr/c/tr_skeleton_kha_veloth.nif
+-- meshes/tr/c/tr_skeleton_khb_veloth.nif
+-- meshes/tr/c/tr_skeleton_orc_veloth.nif
+-- meshes/tr/c/tr_skeleton_veloth.nif

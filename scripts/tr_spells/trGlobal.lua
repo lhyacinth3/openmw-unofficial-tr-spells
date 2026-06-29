@@ -2,6 +2,7 @@ world = require('openmw.world')
 core = require('openmw.core')
 types = require('openmw.types')
 util = require('openmw.util')
+async = require('openmw.async')
 I = require('openmw.interfaces')
 
 local trData = require('scripts.tr_spells.trData')
@@ -71,9 +72,9 @@ local function checkBanishSigils()
 			or #types.Container.content(container):getAll() == 0
 		then
 			core.sendGlobalEvent("SpawnVfx", {
-				model = "meshes/td/td_vfx_banish.nif",--"meshes/e/soultraphit.nif",
-				position = light.position- v3(0,0,30),
-				options = {scale = 0.50}
+				model = "meshes/td/td_vfx_banish.nif",
+				position = (entry.pos or light.position)- v3(0,0,20) - v3(0,0,10 * (entry.scale or 1)),
+				options = {scale = 0.50 * (entry.scale or 1)}
 			})
 			core.sound.playSound3d("mysticism area", light)
 			if light and light:isValid() then
@@ -90,7 +91,7 @@ end
 local function TD_BanishDelete(data)
 	local actor = data.actor
 	if not actor or not actor:isValid() then return end
-	
+
 	local inv = types.Actor.inventory(actor)
 	if not inv:isResolved() then inv:resolve() end
 	
@@ -118,19 +119,30 @@ local function TD_BanishDelete(data)
 	end
 	bonusChance = math.random() < bonusChance and 1 or 0
 	
+	-- scale 2/3 as baseline, 1.0x at lvl 22
+	local level = types.Actor.stats.level(actor).current
+	local scale = math.min(1.0, (2/3) + (level - 1) * 0.015)
+	local bbox = actor:getBoundingBox()
+	
+	--test:
+	--scale = 2
+	--bonusChance = 2
+
+	local sigilPos = v3(
+		actor.position.x,
+		actor.position.y,
+		bbox.center.z + 33*scale
+	)
+		
+	core.sendGlobalEvent("SpawnVfx", {
+		--model = "meshes/e/magic_summon.nif",
+		model = "meshes/td/td_vfx_banish.nif",
+		position = bbox.center,
+		options = {scale = (1+bbox.halfSize.z/100)/2}
+	})
+	
 	if #keepItems > 0 or bonusChance > 0 then
-		local bbox = actor:getBoundingBox()
-		
-		-- scale 2/3 as baseline, 1.0x at lvl 22
-		local level = types.Actor.stats.level(actor).current
-		local scale = math.min(1.0, (2/3) + (level - 1) * 0.015)
-		
-		local sigilPos = v3(
-			actor.position.x,
-			actor.position.y,
-			bbox.center.z + bbox.halfSize.z * scale
-		)
-		
+
 		local container = world.createObject("t_glb_banishdae_empty")
 		container:teleport(actor.cell, sigilPos)
 		container:setScale(scale)
@@ -150,10 +162,69 @@ local function TD_BanishDelete(data)
 		saveData.banishSigils[#saveData.banishSigils + 1] = {
 			container = container,
 			light     = light,
+			pos       = sigilPos,
+			scale     = scale,
 		}
 	end
 	actor:remove()
 end
+
+-- ===============================
+-- Gaze of Veloth
+-- ===============================
+
+local function gazeOfVeloth(data)
+	local actor = data.actor
+	if not actor or not actor:isValid() then return end
+
+	local cell = actor.cell
+	local pos = actor.position
+	local rot = actor.rotation
+
+	local victim = types.NPC.record(actor)
+	local key = trData.GAZE_VELOTH_SKELETONS[data.race or ""] or trData.GAZE_VELOTH_FALLBACK_KEY
+	local draft = types.Creature.createRecordDraft({
+		template = types.Creature.records["skeleton"],
+		name     = victim.name,
+		model    = trData.GAZE_VELOTH_MESHES[key],
+		mwscript = victim.mwscript,
+	})
+	local skeleton = world.createObject(world.createRecord(draft).id)
+
+	local skeletonInv = types.Actor.inventory(skeleton)
+	if not skeletonInv:isResolved() then skeletonInv:resolve() end
+	for _, item in ipairs(skeletonInv:getAll()) do item:remove() end
+
+	local inv = types.Actor.inventory(actor)
+	if not inv:isResolved() then inv:resolve() end
+	for _, item in ipairs(inv:getAll()) do
+		item:moveInto(skeletonInv)
+	end
+
+	if data.caster and types.Player.objectIsInstance(data.caster) and I.Crimes then
+		local factions = types.NPC.getFactions(actor)
+		I.Crimes.commitCrime(data.caster, {
+			type    = types.Player.OFFENSE_TYPE.Murder,
+			victim  = actor,
+			faction = factions and factions[1] or nil,
+		})
+	end
+
+	actor:remove()
+
+	skeleton:teleport(cell, pos, { rotation = rot })
+
+	world.vfx.spawn("meshes/e/magic_hit_dst.nif", pos + v3(0, 0, 15))
+	core.sound.playSound3d("destruction area", skeleton)
+
+	async:newUnsavableSimulationTimer(0.001, function()
+		if skeleton and skeleton:isValid() then
+			skeleton:sendEvent('ModifyStat', { stat = 'health', amount = -9999999 })
+		end
+	end)
+end
+
+
 
 -- ===============================
 -- Summoning
@@ -311,7 +382,7 @@ local function blinkTeleportPlayer(data)
 	local player = world.players[1]
 	if not player or not player:isValid() then return end
 	core.sendGlobalEvent("SpawnVfx", {
-		model = "meshes/steam_lavariver.nif",
+		model = "meshes/tr_spells/steam_lavariver.nif",
 		position = data.destination - v3(0, 0, 19),
 		options = {scale = 0.15}
 	})	
@@ -678,9 +749,7 @@ end
 -- ===============================
 
 TD_DistractTeleportBack = function(data)
---	print(111)
 	if not (data.actor and data.position) then return end
---	print(222)
 	data.actor:teleport(data.cell or "", data.position)
 end
 
@@ -718,7 +787,7 @@ local function onUpdate(dt)
 	nextSummonCheck = now + SUMMON_CHECK_INTERVAL
 	
 	checkDeadSummons()
-	checkBanishSigils()	
+	checkBanishSigils()
 end
 
 local function OwnlysQuickLoot_freshLoot(data)
@@ -792,7 +861,14 @@ return {
 		TD_ApplyBlind       = applyBlind,
 		TD_GiveStartingTomes = giveStartingTomes,
 		TD_BanishDelete     = TD_BanishDelete,
+		TD_GazeOfVeloth     = gazeOfVeloth,
 		TD_RemoveScript     = TD_RemoveScript,
 		TD_DistractTeleportBack = TD_DistractTeleportBack,
+		--TD_SpellAdded = function(data)
+		--	print("+",data.target, data.spellId)
+		--end,
+		--TD_SpellRemoved = function(data)
+		--	print("-",data.target, data.spellId)
+		--end
 	},
 }

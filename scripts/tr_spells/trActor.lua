@@ -14,7 +14,7 @@ local activeSpells = types.Actor.activeSpells(self)
 
 isPlayer = false
 local SCRIPT_PATH = 'scripts/tr_spells/trActor.lua'
-local CHECK_INTERVAL = 0.25
+local CHECK_INTERVAL = 0.2
 local loadedAddons = false
 
 G = {
@@ -36,6 +36,7 @@ G = {
 	eventHandlers  = {}, -- returned eventHandlers
 	onHitJobs      = {}, -- I.Combat events
 	onInactiveJobs = {}, -- Cleanup before the actor becomes inactive
+	onSaveRevert   = {}, -- revert visual-only activeEffect modifies before serialization
 	
 	-- onUpdate Jobs.. but not *every* frame
 	sluggishJobs     = {},
@@ -68,7 +69,7 @@ function isSpellRelevant(spell)
 	local cached = relevanceCache[spell.id]
 	if cached ~= nil then return cached end
 	
-	local source = core.magic.spells.records[spell.id] or types.Potion.records[spell.id]
+	local source = core.magic.spells.records[spell.id] or types.Potion.records[spell.id] or types.Ingredient.records[spell.id]
 	if not source and spell.item then
 		local enchantId = spell.item.type.record(spell.item).enchant or ""
 		source = core.magic.enchantments.records[enchantId]
@@ -125,14 +126,86 @@ end)
 
 local nextUpdate = math.random() * 1.0
 
+-- general spell detection
+local knownSpells = {} -- [activeSpellId] = { spellId, caster, harmful, effects }
+local spellTrackerPrimed = false
+
+-- cached metadata
+local spellMeta = {} -- [spellId] = { harmful, effects = { effId, ... } }
+
+local function getSpellMeta(activeSpell)
+	local meta = spellMeta[activeSpell.id]
+	if meta then return meta end
+	
+	local source = core.magic.spells.records[activeSpell.id]
+		or types.Potion.records[activeSpell.id]
+		or types.Ingredient.records[activeSpell.id]
+	if not source and activeSpell.item then
+		local enchantId = activeSpell.item.type.record(activeSpell.item).enchant or ""
+		source = core.magic.enchantments.records[enchantId]
+	end
+	if not source then
+		local bookRecord = types.Book.records[activeSpell.id]
+		if bookRecord then
+			source = core.magic.enchantments.records[bookRecord.enchant or ""]
+		end
+	end
+	
+	local effects = {}
+	local harmful = false
+	for _, eff in ipairs(source and source.effects or activeSpell.effects) do
+		local effId = eff.id and eff.id:lower()
+		if effId then
+			table.insert(effects, effId)
+			local mgef = eff.effect or core.magic.effects.records[effId]
+			if mgef and mgef.harmful then harmful = true end
+		end
+	end
+	
+	meta = { harmful = harmful, effects = effects }
+	if source then spellMeta[activeSpell.id] = meta end
+	return meta
+end
+
+local function notifyPlayers(eventName, payload)
+	for _, p in pairs(nearby.players) do
+		p:sendEvent(eventName, payload)
+	end
+	core.sendGlobalEvent(eventName, payload)
+end
+
 local function scanActiveSpells()
 	local currentlyActive = {}
-	
+	local currentSpellIds = {}
+
 	for _, fn in pairs(G.onAggregateReset) do
 		fn()
 	end
 	
 	for _, activeSpell in pairs(activeSpells) do
+		-- per-spell add tracking, outside the relevance gate so every spell is seen
+		local asId = activeSpell.activeSpellId
+		currentSpellIds[asId] = true
+		if not knownSpells[asId] then
+			local meta = getSpellMeta(activeSpell)
+			knownSpells[asId] = {
+				spellId = activeSpell.id,
+				caster  = activeSpell.caster,
+				harmful = meta.harmful,
+				effects = meta.effects,
+			}
+			if spellTrackerPrimed then
+				notifyPlayers("TD_SpellAdded", {
+					target        = self.object,
+					caster        = activeSpell.caster,
+					spellId       = activeSpell.id,
+					activeSpellId = asId,
+					harmful       = meta.harmful,
+					effects       = meta.effects,
+				})
+			end
+		end
+
 		if isSpellRelevant(activeSpell) then
 			for _, eff in pairs(activeSpell.effects) do
 				local effId = eff.id and eff.id:lower() or ""
@@ -154,6 +227,19 @@ local function scanActiveSpells()
 						local tickFn = G.onMgefTick[effId]
 						if tickFn then tickFn(key, eff, activeSpell, entry, CHECK_INTERVAL) end
 					end
+				elseif G.onMgefTick[effId] then
+					currentlyActive[key] = true
+					local entry = saveData.trackedEffects[key]
+					if not entry then
+						entry = {
+							effectId      = effId,
+							spellId       = activeSpell.id,
+							activeSpellId = activeSpell.activeSpellId,
+							avgMagnitude  = ((eff.minMagnitude or 0) + (eff.maxMagnitude or 0))/2,
+						}
+						saveData.trackedEffects[key] = entry
+					end
+					G.onMgefTick[effId](key, eff, activeSpell, entry, CHECK_INTERVAL)
 				end
 				
 				if G.onAggregateEffect[effId] then
@@ -166,7 +252,26 @@ local function scanActiveSpells()
 	for _, fn in pairs(G.onAggregateCommit) do
 		fn()
 	end
-	
+
+	-- per-spell remove tracking
+	for asId, info in pairs(knownSpells) do
+		if not currentSpellIds[asId] then
+			if spellTrackerPrimed then
+				notifyPlayers("TD_SpellRemoved", {
+					target        = self.object,
+					caster        = info.caster,
+					spellId       = info.spellId,
+					activeSpellId = asId,
+					harmful       = info.harmful,
+					effects       = info.effects,
+					reason        = "expired",
+				})
+			end
+			knownSpells[asId] = nil
+		end
+	end
+	spellTrackerPrimed = true
+
 	for key, entry in pairs(saveData.trackedEffects) do
 		if not currentlyActive[key] then
 			local removedFn = G.onMgefRemoved[entry.effectId]
@@ -185,7 +290,22 @@ end
 
 ------------------------- LIFECYCLE -------------------------
 
-local function teardownAll()
+local function teardownAll(reason)
+	-- broadcast removal for spells still live at teardown (death, unload)
+	for asId, info in pairs(knownSpells) do
+		if spellTrackerPrimed then
+			notifyPlayers("TD_SpellRemoved", {
+				target        = self.object,
+				caster        = info.caster,
+				spellId       = info.spellId,
+				activeSpellId = asId,
+				harmful       = info.harmful,
+				effects       = info.effects,
+				reason        = reason,
+			})
+		end
+	end
+	knownSpells = {}
 	for key, entry in pairs(saveData.trackedEffects) do
 		local removedFn = G.onMgefRemoved[entry.effectId]
 		if removedFn then removedFn(key, entry) end
@@ -216,7 +336,7 @@ end
 
 local function onInactive()
 	for _, fn in pairs(G.onInactiveJobs) do fn() end
-	teardownAll()
+	teardownAll("inactive")
 	core.sendGlobalEvent('TD_RemoveScript', {
 		actor = self.object,
 		script = SCRIPT_PATH,
@@ -237,6 +357,7 @@ local function onSave()
 			saveData.trackedEffects[key] = nil
 		end
 	end
+	for _, fn in pairs(G.onSaveRevert) do fn() end
 	return saveData
 end
 
@@ -253,7 +374,7 @@ local eventHandlers = {
 		end
 	end,
 	Died = function()
-		teardownAll()
+		teardownAll("died")
 		G.isDead = true
 	end,
 }
